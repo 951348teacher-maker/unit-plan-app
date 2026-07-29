@@ -15,7 +15,7 @@ THINKING_SKILLS = {
 
 ALL_SKILLS_FLAT = [skill for cat in THINKING_SKILLS.values() for skill in cat]
 
-# 質問リスト（表記修正＆生徒の実態・指導上の工夫を追加）
+# 質問リスト
 QUESTIONS = [
     {"key": "subject", "label": "教科名", "type": "text", "prompt": "まずは【教科名】を入力してください。（例: 国語、数学、社会）"},
     {"key": "teacher", "label": "授業者", "type": "text", "prompt": "【授業者名】を入力してください。（例: 山田 太郎）"},
@@ -29,7 +29,7 @@ QUESTIONS = [
 
 MATSUMATSU_PHASES = [
     {"key": "tsukamu", "title": "① つかむ"},
-    {"key": "kangaeru", "title": "② 考える（自分の考えを育てる）"},
+    {"key": "kangaeru", "title": "② 考える"},
     {"key": "manabi", "title": "③ 学び合う"},
     {"key": "matomeru", "title": "④ まとめる・振り返る"}
 ]
@@ -73,6 +73,7 @@ with col_chat:
 
     step = st.session_state.step
     
+    # 段階1: 基本情報の入力
     if step < len(QUESTIONS):
         q = QUESTIONS[step]
         with st.form(key=f"form_step_{step}", clear_on_submit=True):
@@ -96,10 +97,11 @@ with col_chat:
                     total = int(st.session_state.data["total_hours"])
                     st.session_state.chat_history.append({
                         "role": "assistant", 
-                        "content": f"ありがとうございます！次に第1時～第{total}時までの【各時間の目標】と【身に付ける思考スキル】を入力します。\nまず「第1時」の内容を入力してください。"
+                        "content": f"ありがとうございます！次に第1時～第{total}時までの【各時間の目標】と【身に付ける主となる思考スキル】を入力します。\nまず「第1時」の内容を入力してください。"
                     })
                 st.rerun()
 
+    # 段階2: 単元計画の入力
     elif step == len(QUESTIONS):
         total_hours = int(st.session_state.data["total_hours"])
         curr_h = st.session_state.hours_done + 1
@@ -108,7 +110,7 @@ with col_chat:
             st.write(f"### ⏰ 第 {curr_h} 時 の入力")
             with st.form(key=f"form_hour_{curr_h}", clear_on_submit=True):
                 h_goal = st.text_area(f"第 {curr_h} 時 の目標")
-                h_skills = st.multiselect(f"第 {curr_h} 時 に身に付ける思考スキル（複数選択可）", ALL_SKILLS_FLAT)
+                h_skills = st.multiselect(f"第 {curr_h} 時 に身に付ける主となる思考スキル（複数選択可）", ALL_SKILLS_FLAT)
                 
                 submitted = st.form_submit_button(f"第 {curr_h} 時を登録")
                 if submitted and h_goal:
@@ -134,6 +136,7 @@ with col_chat:
                         })
                     st.rerun()
 
+    # 段階3: 本時の選択とねらい
     elif step == len(QUESTIONS) + 1:
         total_hours = int(st.session_state.data["total_hours"])
         with st.form(key="form_honshi", clear_on_submit=True):
@@ -147,24 +150,27 @@ with col_chat:
                 st.session_state.step += 1
                 st.session_state.chat_history.append({
                     "role": "assistant",
-                    "content": "それでは最後に、指導課程（三松メソッド）を入力していきます。\nまずは【① つかむ】の学習内容・手立て、思考スキル、教師が意図する生徒の姿を入力してください。"
+                    "content": "それでは最後に、指導課程（図解デザイン）を順に入力していきます。\nまずは【① つかむ】の【学習内容】、【手立て】、【身に付ける思考スキル（複数選択可）】、【教員が意図する生徒の姿】を入力してください。"
                 })
                 st.rerun()
 
+    # 段階4: 指導課程（三松メソッド）入力
     elif step == len(QUESTIONS) + 2:
         m_step = st.session_state.matsumatsu_step
         if m_step < len(MATSUMATSU_PHASES):
             phase = MATSUMATSU_PHASES[m_step]
-            st.write(f"### 📍 三松メソッド: {phase['title']}")
+            st.write(f"### 📍 指導課程: {phase['title']}")
             with st.form(key=f"form_matsumatsu_{m_step}", clear_on_submit=True):
-                content = st.text_area("学習内容・手立て")
-                skills = st.multiselect("身に付ける思考スキル", ALL_SKILLS_FLAT)
-                target_student = st.text_area("教師が意図する生徒の姿")
+                content = st.text_area("学習内容")
+                tedate = st.text_area("手立て")
+                skills = st.multiselect("身に付ける思考スキル（複数選択可）", ALL_SKILLS_FLAT)
+                target_student = st.text_area("教員が意図する生徒の姿")
                 
                 submitted = st.form_submit_button(f"{phase['title']} を登録")
                 if submitted:
                     st.session_state.data["matsumatsu"][phase["key"]] = {
                         "content": content,
+                        "tedate": tedate,
                         "skills": skills,
                         "target_student": target_student
                     }
@@ -172,7 +178,7 @@ with col_chat:
                     skills_str = ", ".join(skills) if skills else "なし"
                     st.session_state.chat_history.append({
                         "role": "user",
-                        "content": f"【{phase['title']}】\n内容: {content}\n思考スキル: {skills_str}\n生徒の姿: {target_student}"
+                        "content": f"【{phase['title']}】\n学習内容: {content}\n手立て: {tedate}\n思考スキル: {skills_str}\n教員が意図する生徒の姿: {target_student}"
                     })
                     
                     if st.session_state.matsumatsu_step < len(MATSUMATSU_PHASES):
@@ -193,54 +199,185 @@ with col_chat:
         st.success("🎉 すべての入力が完了しました！")
         st.info("右側のプレビュー画面で確認し、印刷またはPDF保存してご利用ください。")
 
+# プレビュー表示エリア
 with col_preview:
     st.subheader("📄 指導計画シート プレビュー")
     d = st.session_state.data
+    mm_data = d.get("matsumatsu", {})
+
+    def get_p(key):
+        return mm_data.get(key, {"content": "", "tedate": "", "skills": [], "target_student": ""})
+
+    tsukamu = get_p("tsukamu")
+    kangaeru = get_p("kangaeru")
+    manabi = get_p("manabi")
+    matomeru = get_p("matomeru")
+
+    def fmt_skills(skills):
+        if not skills:
+            return "(     )"
+        return " / ".join(skills)
+
     preview_html = f'''
-    <div style="background-color: #ffffff; padding: 15px; border: 2px solid #333; font-family: sans-serif; font-size: 10pt; color: #000;">
-        <div style="text-align: center; font-weight: bold; font-size: 13pt; background-color: #e6f0fa; padding: 6px; border: 1px solid #333; margin-bottom: 10px;">
+    <style>
+        .page {{
+            background-color: #ffffff;
+            padding: 20px;
+            border: 2px solid #333;
+            font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+            font-size: 10pt;
+            color: #000;
+            margin-bottom: 25px;
+            position: relative;
+        }}
+        .page-title {{
+            text-align: center;
+            font-weight: bold;
+            font-size: 12pt;
+            background-color: #e6f0fa;
+            padding: 6px;
+            border: 1px solid #333;
+            margin-bottom: 12px;
+        }}
+        table.tbl {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }}
+        table.tbl th, table.tbl td {{
+            border: 1px solid #333;
+            padding: 5px;
+        }}
+        table.tbl th {{
+            background-color: #f2f2f2;
+            text-align: center;
+        }}
+        
+        /* 2ページ目（指導課程図解） */
+        .diagram-container {{
+            position: relative;
+            width: 100%;
+            height: 850px;
+            background: #fff;
+            overflow: hidden;
+            border: 1px solid #ccc;
+        }}
+        .box-cyan {{
+            position: absolute;
+            background-color: #d1f7f7;
+            border: 2px solid #33ccff;
+            border-radius: 15px;
+            padding: 10px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            overflow: auto;
+        }}
+        .box-cyan h3 {{
+            margin: 0 0 5px 0;
+            text-align: center;
+            font-size: 14pt;
+            text-decoration: underline;
+            color: #000;
+        }}
+        .box-dark {{
+            position: absolute;
+            background-color: #1a5276;
+            color: #fff;
+            padding: 8px 12px;
+            font-size: 8.5pt;
+            border-radius: 4px;
+            overflow: auto;
+        }}
+        .skill-badge {{
+            position: absolute;
+            border: 2px solid #ffaa00;
+            background: #fff;
+            border-radius: 8px;
+            padding: 3px 10px;
+            font-weight: bold;
+            font-size: 8.5pt;
+            color: #333;
+        }}
+        .arrow-tsunagu {{
+            position: absolute;
+            top: 210px;
+            left: 120px;
+            width: 250px;
+            height: 380px;
+            border-left: 35px solid #0099ee;
+            border-bottom: 35px solid #0099ee;
+            border-bottom-left-radius: 180px;
+            z-index: 1;
+        }}
+        .arrow-head {{
+            position: absolute;
+            top: 190px;
+            left: 100px;
+            width: 0;
+            height: 0;
+            border-left: 35px solid transparent;
+            border-right: 35px solid transparent;
+            border-bottom: 50px solid #0099ee;
+            transform: rotate(-25deg);
+            z-index: 2;
+        }}
+        .text-tsunagu {{
+            position: absolute;
+            top: 230px;
+            left: 45px;
+            font-size: 16pt;
+            font-weight: bold;
+            text-decoration: underline;
+            z-index: 3;
+        }}
+    </style>
+
+    <!-- 1ページ目：基本情報 ＆ 単元計画 -->
+    <div class="page">
+        <div class="page-title">
             目指す生徒の姿を組み込んだ授業計画シート 【研究主題】 すべての生徒がいきいきと輝く授業を具現化するための集団づくりと授業改善
         </div>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+        <table class="tbl">
             <tr>
-                <th style="border:1px solid #333; background:#f2f2f2; width:15%; padding:4px;">教科</th>
-                <td style="border:1px solid #333; width:35%; padding:4px;">{d.get("subject", "")}</td>
-                <th style="border:1px solid #333; background:#f2f2f2; width:15%; padding:4px;">授業者</th>
-                <td style="border:1px solid #333; width:35%; padding:4px;">{d.get("teacher", "")}</td>
+                <th style="width:15%;">教科</th>
+                <td style="width:35%;">{d.get("subject", "")}</td>
+                <th style="width:15%;">授業者</th>
+                <td style="width:35%;">{d.get("teacher", "")}</td>
             </tr>
             <tr>
-                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">単元（題材）名</th>
-                <td colspan="3" style="border:1px solid #333; padding:4px;">{d.get("unit_title", "")}</td>
+                <th>単元（題材）名</th>
+                <td colspan="3">{d.get("unit_title", "")}</td>
             </tr>
             <tr>
-                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">単元（題材）の目標</th>
-                <td colspan="3" style="border:1px solid #333; padding:4px;">{d.get("unit_goal", "").replace('\n', '<br>')}</td>
+                <th>単元（題材）の目標</th>
+                <td colspan="3">{d.get("unit_goal", "").replace('\n', '<br>')}</td>
             </tr>
             <tr>
-                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">生徒の実態</th>
-                <td colspan="3" style="border:1px solid #333; padding:4px;">{d.get("student_status", "").replace('\n', '<br>')}</td>
+                <th>生徒の実態</th>
+                <td colspan="3">{d.get("student_status", "").replace('\n', '<br>')}</td>
             </tr>
             <tr>
-                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">指導上の工夫</th>
-                <td colspan="3" style="border:1px solid #333; padding:4px;">{d.get("teaching_ideas", "").replace('\n', '<br>')}</td>
+                <th>指導上の工夫</th>
+                <td colspan="3">{d.get("teaching_ideas", "").replace('\n', '<br>')}</td>
             </tr>
             <tr>
-                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">教科の見方・考え方</th>
-                <td colspan="3" style="border:1px solid #333; padding:4px;">{d.get("viewpoint", "").replace('\n', '<br>')}</td>
+                <th>教科の見方・考え方</th>
+                <td colspan="3">{d.get("viewpoint", "").replace('\n', '<br>')}</td>
             </tr>
         </table>
-        <div style="font-weight:bold; margin-bottom:3px; background:#eee; padding:2px 5px;">■ 単元計画</div>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+
+        <div style="font-weight:bold; margin: 10px 0 5px 0; background:#eee; padding:3px 5px;">■ 単元計画</div>
+        <table class="tbl">
             <tr>
-                <th style="border:1px solid #333; background:#f2f2f2; width:12%; padding:4px;">時間</th>
-                <th style="border:1px solid #333; background:#f2f2f2; width:58%; padding:4px;">各時間の目標</th>
-                <th style="border:1px solid #333; background:#f2f2f2; width:30%; padding:4px;">身に付ける思考スキル</th>
+                <th style="width:12%;">時間</th>
+                <th style="width:53%;">各時間の目標</th>
+                <th style="width:35%;">身に付ける主となる思考スキル</th>
             </tr>
     '''
+    
     unit_plans = d.get("unit_plan", [])
     honshi_num = d.get("honshi_num", 0)
     if not unit_plans:
-        preview_html += "<tr><td colspan='3' style='border:1px solid #333; text-align:center; padding:10px; color:#888;'>単元計画は未入力です</td></tr>"
+        preview_html += "<tr><td colspan='3' style='text-align:center; padding:15px; color:#888;'>単元計画は未入力です</td></tr>"
     else:
         for hp in unit_plans:
             is_honshi = "<br><span style='color:red; font-weight:bold;'>★本時</span>" if hp["hour"] == honshi_num else ""
@@ -248,42 +385,88 @@ with col_preview:
             bg_color = "#fff3cd" if hp["hour"] == honshi_num else "#ffffff"
             preview_html += f'''
             <tr style="background-color: {bg_color};">
-                <td style="border:1px solid #333; text-align:center; padding:4px;">第{hp['hour']}時{is_honshi}</td>
-                <td style="border:1px solid #333; padding:4px;">{hp['goal']}</td>
-                <td style="border:1px solid #333; padding:4px;"><span style="background:#004085; color:#fff; padding:1px 5px; border-radius:3px; font-size:8pt;">{skills_str}</span></td>
+                <td style="text-align:center;">第{hp['hour']}時{is_honshi}</td>
+                <td>{hp['goal']}</td>
+                <td><span style="background:#004085; color:#fff; padding:2px 6px; border-radius:3px; font-size:8pt;">{skills_str}</span></td>
             </tr>
             '''
+            
     preview_html += f'''
         </table>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+        <table class="tbl" style="margin-top:10px;">
             <tr>
-                <th style="border:1px solid #333; background:#f2f2f2; width:20%; padding:4px;">本時のねらい</th>
-                <td style="border:1px solid #333; padding:4px;">{d.get("honshi_aim", "").replace('\n', '<br>')}</td>
+                <th style="width:20%;">本時のねらい</th>
+                <td>{d.get("honshi_aim", "").replace('\n', '<br>')}</td>
             </tr>
         </table>
-        <div style="font-weight:bold; margin-bottom:3px; background:#eee; padding:2px 5px;">■ 指導課程（三松メソッド）</div>
-    '''
-    mm_data = d.get("matsumatsu", {})
-    for p in MATSUMATSU_PHASES:
-        k = p["key"]
-        p_info = mm_data.get(k, {})
-        content = p_info.get("content", "").replace('\n', '<br>')
-        target = p_info.get("target_student", "").replace('\n', '<br>')
-        skills = p_info.get("skills", [])
-        skills_str = ", ".join(skills) if skills else "なし"
-        preview_html += f'''
-        <div style="border: 1px solid #333; margin-bottom: 6px; padding: 4px; background-color: #fafafa;">
-            <div style="font-weight:bold; background-color: #d9edf7; padding: 2px 5px; border-bottom: 1px solid #333; margin: -4px -4px 4px -4px;">{p['title']}</div>
-            <table style="width:100%; border:none; border-collapse:collapse;">
-                <tr style="border:none;">
-                    <td style="border:none; width:55%; vertical-align:top; padding:2px;"><b>【学習内容・手立て】</b><br>{content}</td>
-                    <td style="border:none; width:45%; vertical-align:top; background-color:#ffffff; border-left:1px dashed #ccc; padding:2px 5px;">
-                        <b>【思考スキル】</b>: <span style="color:#004085; font-weight:bold;">{skills_str}</span><br>
-                        <b>【教師が意図する生徒の姿】</b><br>{target}
-                    </td>
-                </tr>
-            </table>
+    </div>
+
+    <!-- 2ページ目：指導課程（図解デザイン） -->
+    <div class="page">
+        <div class="page-title">■ 指導課程（三松メソッド）</div>
+        <div class="diagram-container">
+            
+            <!-- 大きな「つなぐ」矢印 -->
+            <div class="arrow-head"></div>
+            <div class="arrow-tsunagu"></div>
+            <div class="text-tsunagu">つなぐ</div>
+
+            <!-- ① つかむ -->
+            <div class="box-cyan" style="top: 20px; left: 40px; width: 360px; height: 130px; z-index: 10;">
+                <h3>つかむ</h3>
+                <b>学習内容:</b> {tsukamu['content']}<br>
+                <b>手立て:</b> {tsukamu['tedate']}
+            </div>
+            <div class="skill-badge" style="top: 10px; right: 40px;">
+                思考スキル（ {fmt_skills(tsukamu['skills'])} ）
+            </div>
+            <div class="box-dark" style="top: 55px; right: 30px; width: 230px; height: 95px; z-index: 10;">
+                <b>教員が意図する生徒の姿</b><br>
+                {tsukamu['target_student'].replace('\n', '<br>')}
+            </div>
+
+            <!-- ② 考える -->
+            <div class="box-cyan" style="top: 190px; right: 50px; width: 360px; height: 140px; z-index: 10;">
+                <h3>考える</h3>
+                <b>学習内容:</b> {kangaeru['content']}<br>
+                <b>手立て:</b> {kangaeru['tedate']}
+            </div>
+            <div class="skill-badge" style="top: 350px; right: 70px;">
+                思考スキル（ {fmt_skills(kangaeru['skills'])} ）
+            </div>
+            <div class="box-dark" style="top: 395px; right: 60px; width: 240px; height: 95px; z-index: 10;">
+                <b>教員が意図する生徒の姿</b><br>
+                {kangaeru['target_student'].replace('\n', '<br>')}
+            </div>
+
+            <!-- ③ 学び合う -->
+            <div class="box-cyan" style="top: 510px; right: 180px; width: 360px; height: 140px; z-index: 10;">
+                <h3>学び合う</h3>
+                <b>学習内容:</b> {manabi['content']}<br>
+                <b>手立て:</b> {manabi['tedate']}
+            </div>
+            <div class="skill-badge" style="top: 670px; right: 200px;">
+                思考スキル（ {fmt_skills(manabi['skills'])} ）
+            </div>
+            <div class="box-dark" style="top: 715px; right: 170px; width: 240px; height: 95px; z-index: 10;">
+                <b>教員が意図する生徒の姿</b><br>
+                {manabi['target_student'].replace('\n', '<br>')}
+            </div>
+
+            <!-- ④ まとめる・振り返る -->
+            <div class="box-cyan" style="top: 680px; left: 20px; width: 360px; height: 120px; z-index: 10;">
+                <h3 style="font-size:12pt;">まとめる・振り返る</h3>
+                <b>学習内容:</b> {matomeru['content']}<br>
+                <b>手立て:</b> {matomeru['tedate']}
+            </div>
+            <div class="skill-badge" style="top: 815px; left: 40px;">
+                思考スキル（ {fmt_skills(matomeru['skills'])} ）
+            </div>
+
         </div>
-        '''
-    preview_html += "</div>"
-    st.components.v1.html(preview_html, height=850, scrolling=True)
+        <div style="font-size: 8pt; margin-top: 5px; color: #555;">
+            ※ 各教科の見方・考え方は学習指導要領の解説 教科の目標を参考にする
+        </div>
+    </div>
+    '''
+    st.components.v1.html(preview_html, height=1800, scrolling=True)
