@@ -1,5 +1,6 @@
 import streamlit as st
 import json
+import html
 
 st.set_page_config(
     page_title="授業計画シート作成アプリ（三松メソッド）",
@@ -16,7 +17,6 @@ THINKING_SKILLS = {
 
 ALL_SKILLS_FLAT = [skill for cat in THINKING_SKILLS.values() for skill in cat]
 
-# 質問リスト
 QUESTIONS = [
     {"key": "subject", "label": "教科名", "type": "text", "prompt": "まずは【教科名】を入力してください。（例: 国語、数学、社会）"},
     {"key": "teacher", "label": "授業者", "type": "text", "prompt": "【授業者名】を入力してください。（例: 山田 太郎）"},
@@ -49,14 +49,19 @@ if "hours_done" not in st.session_state:
 if "matsumatsu_step" not in st.session_state:
     st.session_state.matsumatsu_step = 0
 
+# 安全にHTML文字列化するヘルパー関数
+def safe_html(text):
+    if not text:
+        return ""
+    escaped = html.escape(str(text))
+    return escaped.replace("\n", "<br>")
+
 st.title("📝 授業計画シート作成アプリ（三松メソッド対応）")
 st.caption("対話形式で質問に答えるだけで、初めての人でも分かりやすい指導計画シートを生成します。")
 
-# サイドバー（途中保存・復元・概要表示）
+# サイドバー
 with st.sidebar:
     st.header("💾 データの保存・再開")
-    
-    # 現在のセッション状態全体を保存用データとして作成
     save_data = {
         "step": st.session_state.step,
         "data": st.session_state.data,
@@ -253,7 +258,7 @@ with col_preview:
 
     def fmt_skills(skills):
         if not skills:
-            return "(     )"
+            return "( 未設定 )"
         return " / ".join(skills)
 
     preview_html = f'''
@@ -261,15 +266,33 @@ with col_preview:
     <html>
     <head>
     <style>
+        @page {{
+            size: A4 portrait;
+            margin: 10mm;
+        }}
         @media print {{
             .no-print {{ display: none !important; }}
-            .page {{ border: none !important; box-shadow: none !important; margin: 0 !important; page-break-after: always; }}
+            body {{ padding: 0 !important; background-color: #fff !important; }}
+            .page {{ 
+                border: none !important; 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+                page-break-after: always; 
+                height: 275mm; /* A4の印刷領域に合わせる */
+                overflow: hidden;
+            }}
+        }}
+        * {{
+            box-sizing: border-box;
+            word-break: break-word; /* 長文の崩れ防止 */
         }}
         body {{
             font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
             background-color: #f5f5f5;
             margin: 0;
             padding: 10px;
+            color: #000;
         }}
         .print-btn {{
             background-color: #0288d1;
@@ -284,154 +307,149 @@ with col_preview:
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }}
         .print-btn:hover {{ background-color: #01579b; }}
+        
+        /* A4サイズに最適化したページコンテナ */
         .page {{
             background-color: #ffffff;
-            padding: 20px;
-            border: 2px solid #333;
-            font-size: 9.5pt;
-            color: #000;
+            padding: 15px;
+            border: 1px solid #ccc;
+            font-size: 8.5pt;
+            line-height: 1.3;
             margin-bottom: 25px;
-            position: relative;
-            box-sizing: border-box;
             width: 100%;
+            min-height: 270mm;
+            position: relative;
         }}
         .page-title {{
             text-align: center;
             font-weight: bold;
-            font-size: 11pt;
+            font-size: 10.5pt;
             background-color: #e6f0fa;
-            padding: 6px;
+            padding: 5px;
             border: 1px solid #333;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }}
         table.tbl {{
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }}
         table.tbl th, table.tbl td {{
             border: 1px solid #333;
-            padding: 4px 6px;
+            padding: 3px 6px;
         }}
         table.tbl th {{
             background-color: #f2f2f2;
             text-align: center;
         }}
 
-        /* 2ページ目（指導課程図解・横幅ピッタリ版） */
-        .diagram-container {{
+        /* 2ページ目（構造図解：相対配置で縦崩れを防ぐ柔軟レイアウト） */
+        .diagram-wrapper {{
+            display: flex;
             position: relative;
             width: 100%;
-            height: 980px;
-            background: #fff;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            overflow: hidden;
-        }}
-        
-        /* カード（横幅を親の100%から余白を引いた可変サイズに設定） */
-        .phase-block {{
-            position: absolute;
-            left: 70px;
-            right: 15px;
-            height: 155px;
-            border: 2px solid #00bcd4;
-            background-color: #e0f7fa;
-            border-radius: 10px;
-            padding: 10px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.08);
-            z-index: 10;
-            box-sizing: border-box;
-        }}
-        .phase-title-text {{
-            font-size: 12pt;
-            font-weight: bold;
-            text-decoration: underline;
-            margin-bottom: 5px;
-            text-align: center;
-        }}
-        .phase-inner {{
-            display: flex;
             gap: 10px;
-            height: 105px;
-        }}
-        .phase-left {{
-            flex: 1.2;
-            font-size: 8.5pt;
-            overflow: auto;
-        }}
-        .phase-right {{
-            flex: 1;
-            background-color: #1a5276;
-            color: #fff;
-            padding: 6px 8px;
-            border-radius: 6px;
-            font-size: 8pt;
-            overflow: auto;
-        }}
-        .skill-tag {{
-            display: inline-block;
-            background-color: #fff;
-            border: 1.5px solid #ff9800;
-            color: #333;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 8pt;
-            margin-top: 4px;
+            margin-top: 5px;
         }}
 
-        /* 「つなぐ」太い循環矢印構造 */
-        .tsunagu-path {{
-            position: absolute;
-            top: 90px;
-            left: 15px;
+        /* 左側：「つなagu」の垂直循環ライン */
+        .tsunagu-sidebar {{
             width: 45px;
-            height: 730px;
-            border-left: 24px solid #0288d1;
-            border-bottom: 24px solid #0288d1;
-            border-top: 24px solid #0288d1;
-            border-top-left-radius: 35px;
-            border-bottom-left-radius: 35px;
-            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-left: 18px solid #0288d1;
+            border-top: 18px solid #0288d1;
+            border-bottom: 18px solid #0288d1;
+            border-top-left-radius: 25px;
+            border-bottom-left-radius: 25px;
+            position: relative;
+            margin-left: 5px;
         }}
-        /* つかむへ入る右向きの矢印先端 */
-        .tsunagu-arrow-right {{
+        .tsunagu-arrow-tip {{
             position: absolute;
-            top: 75px;
-            left: 42px;
+            top: -18px;
+            right: -25px;
             width: 0;
             height: 0;
-            border-top: 26px solid transparent;
-            border-bottom: 26px solid transparent;
-            border-left: 32px solid #0288d1;
-            z-index: 2;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            border-left: 20px solid #0288d1;
         }}
-        .tsunagu-label {{
-            position: absolute;
-            top: 410px;
-            left: -12px;
-            font-size: 15pt;
+        .tsunagu-text {{
+            font-size: 13pt;
             font-weight: bold;
             color: #0288d1;
             writing-mode: vertical-rl;
             letter-spacing: 4px;
             background: #fff;
-            padding: 5px 2px;
-            z-index: 3;
+            padding: 8px 2px;
         }}
 
-        /* 場面間の下向き太矢印 */
-        .down-arrow {{
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 18px solid transparent;
-            border-right: 18px solid transparent;
-            border-top: 26px solid #0288d1;
-            z-index: 5;
+        /* 右側：ステップの流れ */
+        .flow-container {{
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }}
+
+        .phase-card {{
+            border: 2px solid #00bcd4;
+            background-color: #e0f7fa;
+            border-radius: 8px;
+            padding: 8px 10px;
+            box-shadow: 1px 1px 4px rgba(0,0,0,0.05);
+        }}
+        .phase-card-title {{
+            font-size: 10.5pt;
+            font-weight: bold;
+            text-decoration: underline;
+            text-align: center;
+            margin-bottom: 4px;
+            color: #006064;
+        }}
+        
+        /* カード内部の左右カラム固定・自動折り返し指定 */
+        .phase-card-body {{
+            display: flex;
+            gap: 10px;
+        }}
+        .phase-card-left {{
+            flex: 1.3;
+            min-width: 0; /* カラムのはみ出し・ズレを防止 */
+            font-size: 8pt;
+        }}
+        .phase-card-right {{
+            flex: 1;
+            min-width: 0; /* カラムのはみ出し・ズレを防止 */
+            background-color: #1a5276;
+            color: #fff;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 8pt;
+        }}
+        
+        .skill-badge {{
+            display: inline-block;
+            background-color: #fff;
+            border: 1.5px solid #ff9800;
+            color: #333;
+            font-weight: bold;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 7.5pt;
+            margin-top: 4px;
+        }}
+
+        /* 各ステップ間の矢印 */
+        .down-arrow-icon {{
+            text-align: center;
+            color: #0288d1;
+            font-size: 14pt;
+            line-height: 1;
+            margin: -2px 0;
         }}
     </style>
     </head>
@@ -447,33 +465,33 @@ with col_preview:
         <table class="tbl">
             <tr>
                 <th style="width:15%;">教科</th>
-                <td style="width:35%;">{d.get("subject", "")}</td>
+                <td style="width:35%;">{safe_html(d.get("subject", ""))}</td>
                 <th style="width:15%;">授業者</th>
-                <td style="width:35%;">{d.get("teacher", "")}</td>
+                <td style="width:35%;">{safe_html(d.get("teacher", ""))}</td>
             </tr>
             <tr>
                 <th>単元（題材）名</th>
-                <td colspan="3">{d.get("unit_title", "")}</td>
+                <td colspan="3">{safe_html(d.get("unit_title", ""))}</td>
             </tr>
             <tr>
                 <th>単元（題材）の目標</th>
-                <td colspan="3">{d.get("unit_goal", "").replace('\n', '<br>')}</td>
+                <td colspan="3">{safe_html(d.get("unit_goal", ""))}</td>
             </tr>
             <tr>
                 <th>生徒の実態</th>
-                <td colspan="3">{d.get("student_status", "").replace('\n', '<br>')}</td>
+                <td colspan="3">{safe_html(d.get("student_status", ""))}</td>
             </tr>
             <tr>
                 <th>指導上の工夫</th>
-                <td colspan="3">{d.get("teaching_ideas", "").replace('\n', '<br>')}</td>
+                <td colspan="3">{safe_html(d.get("teaching_ideas", ""))}</td>
             </tr>
             <tr>
                 <th>教科の見方・考え方</th>
-                <td colspan="3">{d.get("viewpoint", "").replace('\n', '<br>')}</td>
+                <td colspan="3">{safe_html(d.get("viewpoint", ""))}</td>
             </tr>
         </table>
 
-        <div style="font-weight:bold; margin: 8px 0 4px 0; background:#eee; padding:2px 5px;">■ 単元計画</div>
+        <div style="font-weight:bold; margin: 6px 0 3px 0; background:#eee; padding:2px 5px;">■ 単元計画</div>
         <table class="tbl">
             <tr>
                 <th style="width:12%;">時間</th>
@@ -485,7 +503,7 @@ with col_preview:
     unit_plans = d.get("unit_plan", [])
     honshi_num = d.get("honshi_num", 0)
     if not unit_plans:
-        preview_html += "<tr><td colspan='3' style='text-align:center; padding:10px; color:#888;'>単元計画は未入力です</td></tr>"
+        preview_html += "<tr><td colspan='3' style='text-align:center; padding:8px; color:#888;'>単元計画は未入力です</td></tr>"
     else:
         for hp in unit_plans:
             is_honshi = "<br><span style='color:red; font-weight:bold;'>★本時</span>" if hp["hour"] == honshi_num else ""
@@ -494,41 +512,40 @@ with col_preview:
             preview_html += f'''
             <tr style="background-color: {bg_color};">
                 <td style="text-align:center;">第{hp['hour']}時{is_honshi}</td>
-                <td>{hp['goal']}</td>
-                <td><span style="background:#004085; color:#fff; padding:1px 5px; border-radius:3px; font-size:8pt;">{skills_str}</span></td>
+                <td>{safe_html(hp['goal'])}</td>
+                <td><span style="background:#004085; color:#fff; padding:1px 4px; border-radius:3px; font-size:7.5pt;">{safe_html(skills_str)}</span></td>
             </tr>
             '''
             
     preview_html += f'''
         </table>
-        <table class="tbl" style="margin-top:6px;">
+        <table class="tbl" style="margin-top:4px;">
             <tr>
                 <th style="width:20%;">本時のねらい</th>
-                <td>{d.get("honshi_aim", "").replace('\n', '<br>')}</td>
+                <td>{safe_html(d.get("honshi_aim", ""))}</td>
             </tr>
         </table>
 
-        <!-- 元の指導課程（表形式） -->
-        <div style="font-weight:bold; margin: 10px 0 4px 0; background:#eee; padding:2px 5px;">■ 指導課程（表形式）</div>
+        <div style="font-weight:bold; margin: 6px 0 3px 0; background:#eee; padding:2px 5px;">■ 指導課程（概要）</div>
     '''
     for p in MATSUMATSU_PHASES:
         k = p["key"]
         p_info = mm_data.get(k, {})
-        c_val = p_info.get("content", "").replace('\n', '<br>')
-        t_val = p_info.get("tedate", "").replace('\n', '<br>')
-        target = p_info.get("target_student", "").replace('\n', '<br>')
+        c_val = safe_html(p_info.get("content", ""))
+        t_val = safe_html(p_info.get("tedate", ""))
+        target = safe_html(p_info.get("target_student", ""))
         skills = p_info.get("skills", [])
-        s_str = ", ".join(skills) if skills else "なし"
+        s_str = safe_html(", ".join(skills)) if skills else "なし"
         preview_html += f'''
-        <div style="border: 1px solid #333; margin-bottom: 5px; padding: 4px; background-color: #fafafa;">
-            <div style="font-weight:bold; background-color: #d9edf7; padding: 2px 5px; border-bottom: 1px solid #333; margin: -4px -4px 4px -4px;">{p['title']}</div>
-            <table style="width:100%; border:none; border-collapse:collapse; font-size:9pt;">
+        <div style="border: 1px solid #333; margin-bottom: 4px; padding: 3px; background-color: #fafafa;">
+            <div style="font-weight:bold; background-color: #d9edf7; padding: 1px 4px; border-bottom: 1px solid #333; margin: -3px -3px 3px -3px; font-size:8.5pt;">{p['title']}</div>
+            <table style="width:100%; border:none; border-collapse:collapse; font-size:8pt;">
                 <tr style="border:none;">
-                    <td style="border:none; width:50%; vertical-align:top; padding:2px;">
+                    <td style="border:none; width:50%; vertical-align:top; padding:1px 3px;">
                         <b>【学習内容】</b>: {c_val}<br>
                         <b>【手立て】</b>: {t_val}
                     </td>
-                    <td style="border:none; width:50%; vertical-align:top; background-color:#ffffff; border-left:1px dashed #ccc; padding:2px 5px;">
+                    <td style="border:none; width:50%; vertical-align:top; background-color:#ffffff; border-left:1px dashed #ccc; padding:1px 4px;">
                         <b>【思考スキル】</b>: <span style="color:#004085; font-weight:bold;">{s_str}</span><br>
                         <b>【教員が意図する生徒の姿】</b>: {target}
                     </td>
@@ -540,91 +557,94 @@ with col_preview:
     preview_html += f'''
     </div>
 
-    <!-- 2ページ目：指導課程（図解デザイン・幅調整＆途中保存対応版） -->
+    <!-- 2ページ目：指導課程（三松メソッド・構造図解） -->
     <div class="page">
         <div class="page-title">■ 指導課程（三松メソッド・構造図解）</div>
-        <div class="diagram-container">
-            
-            <!-- ループ（つなぐ）太い矢印構造 -->
-            <div class="tsunagu-path"></div>
-            <div class="tsunagu-arrow-right"></div>
-            <div class="tsunagu-label">つなぐ</div>
-
-            <!-- ① つかむ -->
-            <div class="phase-block" style="top: 20px;">
-                <div class="phase-title-text">① つかむ</div>
-                <div class="phase-inner">
-                    <div class="phase-left">
-                        <b>学習内容:</b> {tsukamu['content']}<br>
-                        <b>手立て:</b> {tsukamu['tedate']}<br>
-                        <div class="skill-tag">💡 思考スキル: {fmt_skills(tsukamu['skills'])}</div>
-                    </div>
-                    <div class="phase-right">
-                        <b>教員が意図する生徒の姿:</b><br>
-                        {tsukamu['target_student'].replace('\n', '<br>')}
-                    </div>
-                </div>
+        
+        <div class="diagram-wrapper">
+            <!-- ループ（つなぐ）左サイドライン -->
+            <div class="tsunagu-sidebar">
+                <div class="tsunagu-arrow-tip"></div>
+                <div class="tsunagu-text">つなぐ</div>
             </div>
 
-            <!-- 下向き矢印 ↓ -->
-            <div class="down-arrow" style="top: 205px;"></div>
-
-            <!-- ② 考える -->
-            <div class="phase-block" style="top: 250px;">
-                <div class="phase-title-text">② 考える</div>
-                <div class="phase-inner">
-                    <div class="phase-left">
-                        <b>学習内容:</b> {kangaeru['content']}<br>
-                        <b>手立て:</b> {kangaeru['tedate']}<br>
-                        <div class="skill-tag">💡 思考スキル: {fmt_skills(kangaeru['skills'])}</div>
-                    </div>
-                    <div class="phase-right">
-                        <b>教員が意図する生徒の姿:</b><br>
-                        {kangaeru['target_student'].replace('\n', '<br>')}
-                    </div>
-                </div>
-            </div>
-
-            <!-- 下向き矢印 ↓ -->
-            <div class="down-arrow" style="top: 435px;"></div>
-
-            <!-- ③ 学び合う -->
-            <div class="phase-block" style="top: 480px;">
-                <div class="phase-title-text">③ 学び合う</div>
-                <div class="phase-inner">
-                    <div class="phase-left">
-                        <b>学習内容:</b> {manabi['content']}<br>
-                        <b>手立て:</b> {manabi['tedate']}<br>
-                        <div class="skill-tag">💡 思考スキル: {fmt_skills(manabi['skills'])}</div>
-                    </div>
-                    <div class="phase-right">
-                        <b>教員が意図する生徒の姿:</b><br>
-                        {manabi['target_student'].replace('\n', '<br>')}
+            <!-- 右側 4フェーズの縦フロー -->
+            <div class="flow-container">
+                
+                <!-- ① つかむ -->
+                <div class="phase-card">
+                    <div class="phase-card-title">① つかむ</div>
+                    <div class="phase-card-body">
+                        <div class="phase-card-left">
+                            <b>学習内容:</b> {safe_html(tsukamu['content'])}<br>
+                            <b>手立て:</b> {safe_html(tsukamu['tedate'])}<br>
+                            <div class="skill-badge">💡 思考スキル: {safe_html(fmt_skills(tsukamu['skills']))}</div>
+                        </div>
+                        <div class="phase-card-right">
+                            <b>教員が意図する生徒の姿:</b><br>
+                            {safe_html(tsukamu['target_student'])}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 下向き矢印 ↓ -->
-            <div class="down-arrow" style="top: 665px;"></div>
+                <div class="down-arrow-icon">▼</div>
 
-            <!-- ④ まとめる・振り返る -->
-            <div class="phase-block" style="top: 710px;">
-                <div class="phase-title-text">④ まとめる・振り返る</div>
-                <div class="phase-inner">
-                    <div class="phase-left">
-                        <b>学習内容:</b> {matomeru['content']}<br>
-                        <b>手立て:</b> {matomeru['tedate']}<br>
-                        <div class="skill-tag">💡 思考スキル: {fmt_skills(matomeru['skills'])}</div>
-                    </div>
-                    <div class="phase-right">
-                        <b>教員が意図する生徒の姿:</b><br>
-                        {matomeru['target_student'].replace('\n', '<br>')}
+                <!-- ② 考える -->
+                <div class="phase-card">
+                    <div class="phase-card-title">② 考える</div>
+                    <div class="phase-card-body">
+                        <div class="phase-card-left">
+                            <b>学習内容:</b> {safe_html(kangaeru['content'])}<br>
+                            <b>手立て:</b> {safe_html(kangaeru['tedate'])}<br>
+                            <div class="skill-badge">💡 思考スキル: {safe_html(fmt_skills(kangaeru['skills']))}</div>
+                        </div>
+                        <div class="phase-card-right">
+                            <b>教員が意図する生徒の姿:</b><br>
+                            {safe_html(kangaeru['target_student'])}
+                        </div>
                     </div>
                 </div>
-            </div>
 
+                <div class="down-arrow-icon">▼</div>
+
+                <!-- ③ 学び合う -->
+                <div class="phase-card">
+                    <div class="phase-card-title">③ 学び合う</div>
+                    <div class="phase-card-body">
+                        <div class="phase-card-left">
+                            <b>学習内容:</b> {safe_html(manabi['content'])}<br>
+                            <b>手立て:</b> {safe_html(manabi['tedate'])}<br>
+                            <div class="skill-badge">💡 思考スキル: {safe_html(fmt_skills(manabi['skills']))}</div>
+                        </div>
+                        <div class="phase-card-right">
+                            <b>教員が意図する生徒の姿:</b><br>
+                            {safe_html(manabi['target_student'])}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="down-arrow-icon">▼</div>
+
+                <!-- ④ まとめる・振り返る -->
+                <div class="phase-card">
+                    <div class="phase-card-title">④ まとめる・振り返る</div>
+                    <div class="phase-card-body">
+                        <div class="phase-card-left">
+                            <b>学習内容:</b> {safe_html(matomeru['content'])}<br>
+                            <b>手立て:</b> {safe_html(matomeru['tedate'])}<br>
+                            <div class="skill-badge">💡 思考スキル: {safe_html(fmt_skills(matomeru['skills']))}</div>
+                        </div>
+                        <div class="phase-card-right">
+                            <b>教員が意図する生徒の姿:</b><br>
+                            {safe_html(matomeru['target_student'])}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
-        <div style="font-size: 8pt; margin-top: 5px; color: #555;">
+        
+        <div style="font-size: 7.5pt; margin-top: 8px; color: #555;">
             ※ 各教科の見方・考え方は学習指導要領の解説 教科の目標を参考にする
         </div>
     </div>
@@ -632,4 +652,4 @@ with col_preview:
     </body>
     </html>
     '''
-    st.components.v1.html(preview_html, height=2300, scrolling=True)
+    st.components.v1.html(preview_html, height=2200, scrolling=True)
