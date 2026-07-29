@@ -253,11 +253,11 @@ with col_preview:
             text-align: center;
         }}
         
-        /* 2ページ目（指導課程図解） */
+        /* 2ページ目（指導課程図解・レイアウト調整版） */
         .diagram-container {{
             position: relative;
             width: 100%;
-            height: 750px;
+            height: 900px;
             background: #fff;
             border: 1px solid #ccc;
         }}
@@ -265,15 +265,16 @@ with col_preview:
             position: absolute;
             background-color: #e0f7fa;
             border: 2px solid #00bcd4;
-            border-radius: 12px;
+            border-radius: 10px;
             padding: 8px 10px;
-            font-size: 9pt;
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-size: 8.5pt;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.08);
+            overflow: hidden;
         }}
         .box-cyan h3 {{
             margin: 0 0 4px 0;
             text-align: center;
-            font-size: 12pt;
+            font-size: 11pt;
             text-decoration: underline;
             color: #000;
         }}
@@ -284,6 +285,7 @@ with col_preview:
             padding: 6px 10px;
             font-size: 8pt;
             border-radius: 6px;
+            overflow: hidden;
         }}
         .skill-badge {{
             position: absolute;
@@ -294,13 +296,14 @@ with col_preview:
             font-weight: bold;
             font-size: 8pt;
             color: #333;
+            z-index: 15;
         }}
         .arrow-tsunagu {{
             position: absolute;
             top: 130px;
-            left: 100px;
+            left: 90px;
             width: 220px;
-            height: 380px;
+            height: 520px;
             border-left: 28px solid #0288d1;
             border-bottom: 28px solid #0288d1;
             border-bottom-left-radius: 140px;
@@ -309,7 +312,7 @@ with col_preview:
         .arrow-head {{
             position: absolute;
             top: 115px;
-            left: 85px;
+            left: 75px;
             width: 0;
             height: 0;
             border-left: 28px solid transparent;
@@ -321,7 +324,7 @@ with col_preview:
         .text-tsunagu {{
             position: absolute;
             top: 160px;
-            left: 35px;
+            left: 25px;
             font-size: 15pt;
             font-weight: bold;
             text-decoration: underline;
@@ -431,7 +434,7 @@ with col_preview:
     preview_html += f'''
     </div>
 
-    <!-- 2ページ目：指導課程（図解デザイン・配置整頓版） -->
+    <!-- 2ページ目：指導課程（図解デザイン・重なり完全解消版） -->
     <div class="page">
         <div class="page-title">■ 指導課程（三松メソッド・図解構造）</div>
         <div class="diagram-container">
@@ -442,57 +445,57 @@ with col_preview:
             <div class="text-tsunagu">つなぐ</div>
 
             <!-- ① つかむ -->
-            <div class="box-cyan" style="top: 15px; left: 30px; width: 340px; height: 110px; z-index: 10;">
+            <div class="box-cyan" style="top: 20px; left: 30px; width: 330px; height: 110px; z-index: 10;">
                 <h3>つかむ</h3>
                 <b>学習内容:</b> {tsukamu['content']}<br>
                 <b>手立て:</b> {tsukamu['tedate']}
             </div>
-            <div class="skill-badge" style="top: 10px; right: 30px;">
+            <div class="skill-badge" style="top: 15px; right: 30px;">
                 思考スキル（ {fmt_skills(tsukamu['skills'])} ）
             </div>
-            <div class="box-dark" style="top: 45px; right: 20px; width: 220px; height: 80px; z-index: 10;">
+            <div class="box-dark" style="top: 50px; right: 20px; width: 220px; height: 80px; z-index: 10;">
                 <b>教員が意図する生徒の姿</b><br>
                 {tsukamu['target_student'].replace('\n', '<br>')}
             </div>
 
             <!-- ② 考える -->
-            <div class="box-cyan" style="top: 160px; right: 40px; width: 340px; height: 110px; z-index: 10;">
+            <div class="box-cyan" style="top: 190px; right: 40px; width: 330px; height: 110px; z-index: 10;">
                 <h3>考える</h3>
                 <b>学習内容:</b> {kangaeru['content']}<br>
                 <b>手立て:</b> {kangaeru['tedate']}
             </div>
-            <div class="skill-badge" style="top: 290px; right: 50px;">
+            <div class="skill-badge" style="top: 320px; right: 50px;">
                 思考スキル（ {fmt_skills(kangaeru['skills'])} ）
             </div>
-            <div class="box-dark" style="top: 325px; right: 40px; width: 220px; height: 80px; z-index: 10;">
+            <div class="box-dark" style="top: 355px; right: 40px; width: 220px; height: 80px; z-index: 10;">
                 <b>教員が意図する生徒の姿</b><br>
                 {kangaeru['target_student'].replace('\n', '<br>')}
             </div>
 
             <!-- ③ 学び合う -->
-            <div class="box-cyan" style="top: 430px; right: 140px; width: 340px; height: 110px; z-index: 10;">
+            <div class="box-cyan" style="top: 480px; right: 140px; width: 330px; height: 110px; z-index: 10;">
                 <h3>学び合う</h3>
                 <b>学習内容:</b> {manabi['content']}<br>
                 <b>手立て:</b> {manabi['tedate']}
             </div>
-            <div class="skill-badge" style="top: 560px; right: 160px;">
+            <div class="skill-badge" style="top: 610px; right: 150px;">
                 思考スキル（ {fmt_skills(manabi['skills'])} ）
             </div>
-            <div class="box-dark" style="top: 595px; right: 140px; width: 220px; height: 80px; z-index: 10;">
+            <div class="box-dark" style="top: 645px; right: 140px; width: 220px; height: 80px; z-index: 10;">
                 <b>教員が意図する生徒の姿</b><br>
                 {manabi['target_student'].replace('\n', '<br>')}
             </div>
 
-            <!-- ④ まとめる・振り返る（重なり防止位置調整） -->
-            <div class="box-cyan" style="top: 570px; left: 15px; width: 320px; height: 100px; z-index: 10;">
+            <!-- ④ まとめる・振り返る -->
+            <div class="box-cyan" style="top: 730px; left: 20px; width: 330px; height: 110px; z-index: 10;">
                 <h3 style="font-size:11pt;">まとめる・振り返る</h3>
                 <b>学習内容:</b> {matomeru['content']}<br>
                 <b>手立て:</b> {matomeru['tedate']}
             </div>
-            <div class="skill-badge" style="top: 685px; left: 20px;">
+            <div class="skill-badge" style="top: 725px; right: 30px;">
                 思考スキル（ {fmt_skills(matomeru['skills'])} ）
             </div>
-            <div class="box-dark" style="top: 460px; left: 15px; width: 210px; height: 80px; z-index: 10;">
+            <div class="box-dark" style="top: 760px; right: 20px; width: 220px; height: 80px; z-index: 10;">
                 <b>教員が意図する生徒の姿</b><br>
                 {matomeru['target_student'].replace('\n', '<br>')}
             </div>
@@ -503,4 +506,4 @@ with col_preview:
         </div>
     </div>
     '''
-    st.components.v1.html(preview_html, height=2100, scrolling=True)
+    st.components.v1.html(preview_html, height=2200, scrolling=True)
