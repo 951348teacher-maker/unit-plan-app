@@ -35,6 +35,7 @@ MATSUMATSU_PHASES = [
     {"key": "matomeru", "title": "④ まとめる・振り返る"}
 ]
 
+# セッション状態の初期化
 if "step" not in st.session_state:
     st.session_state.step = 0
 if "data" not in st.session_state:
@@ -51,32 +52,48 @@ if "matsumatsu_step" not in st.session_state:
 st.title("📝 授業計画シート作成アプリ（三松メソッド対応）")
 st.caption("対話形式で質問に答えるだけで、初めての人でも分かりやすい指導計画シートを生成します。")
 
+# サイドバー（途中保存・復元・概要表示）
 with st.sidebar:
+    st.header("💾 データの保存・再開")
+    
+    # 現在のセッション状態全体を保存用データとして作成
+    save_data = {
+        "step": st.session_state.step,
+        "data": st.session_state.data,
+        "chat_history": st.session_state.chat_history,
+        "hours_done": st.session_state.hours_done,
+        "matsumatsu_step": st.session_state.matsumatsu_step
+    }
+    json_str = json.dumps(save_data, ensure_ascii=False, indent=2)
+    
+    st.download_button(
+        label="💾 作業途中のデータを保存(JSON)",
+        data=json_str,
+        file_name="lesson_plan_progress.json",
+        mime="application/json",
+        help="チャットの途中でも、このボタンで保存しておけば後から続きを再開できます。"
+    )
+    
+    uploaded_file = st.file_uploader("📂 保存データを読み込んで再開", type=["json"])
+    if uploaded_file is not None:
+        try:
+            loaded_state = json.load(uploaded_file)
+            st.session_state.step = loaded_state.get("step", 0)
+            st.session_state.data = loaded_state.get("data", {"unit_plan": [], "matsumatsu": {}})
+            st.session_state.chat_history = loaded_state.get("chat_history", [])
+            st.session_state.hours_done = loaded_state.get("hours_done", 0)
+            st.session_state.matsumatsu_step = loaded_state.get("matsumatsu_step", 0)
+            st.success("作業データを読み込みました！続きから再開できます。")
+            st.rerun()
+        except Exception as e:
+            st.error("ファイルの読み込みに失敗しました。正しいJSONファイルかご確認ください。")
+
+    st.divider()
     st.header("📋 入力中のデータ概要")
     d_sb = st.session_state.data
     st.write(f"**教科**: {d_sb.get('subject', '未入力')}")
     st.write(f"**授業者**: {d_sb.get('teacher', '未入力')}")
     st.write(f"**単元**: {d_sb.get('unit_title', '未入力')}")
-    st.divider()
-    
-    # JSONデータでのダウンロード＆復元
-    json_str = json.dumps(d_sb, ensure_ascii=False, indent=2)
-    st.download_button(
-        label="💾 入力データを保存(JSON)",
-        data=json_str,
-        file_name="lesson_plan_data.json",
-        mime="application/json"
-    )
-    
-    uploaded_file = st.file_uploader("📂 保存したJSONを読み込み", type=["json"])
-    if uploaded_file is not None:
-        try:
-            st.session_state.data = json.load(uploaded_file)
-            st.success("データを復元しました！")
-            st.rerun()
-        except Exception as e:
-            st.error("ファイルの読み込みに失敗しました。")
-
     st.divider()
     if st.button("🔄 最初からやり直す"):
         st.session_state.clear()
@@ -276,6 +293,7 @@ with col_preview:
             margin-bottom: 25px;
             position: relative;
             box-sizing: border-box;
+            width: 100%;
         }}
         .page-title {{
             text-align: center;
@@ -300,7 +318,7 @@ with col_preview:
             text-align: center;
         }}
 
-        /* 2ページ目（指導課程図解・太矢印＆固定枠版） */
+        /* 2ページ目（指導課程図解・横幅ピッタリ版） */
         .diagram-container {{
             position: relative;
             width: 100%;
@@ -308,13 +326,15 @@ with col_preview:
             background: #fff;
             border: 1px solid #ccc;
             box-sizing: border-box;
+            overflow: hidden;
         }}
         
-        /* 固定サイズのカード（各場面セット） */
+        /* カード（横幅を親の100%から余白を引いた可変サイズに設定） */
         .phase-block {{
             position: absolute;
-            width: 580px;
-            height: 155px; /* 高さを一定に固定 */
+            left: 70px;
+            right: 15px;
+            height: 155px;
             border: 2px solid #00bcd4;
             background-color: #e0f7fa;
             border-radius: 10px;
@@ -365,33 +385,33 @@ with col_preview:
         .tsunagu-path {{
             position: absolute;
             top: 90px;
-            left: 20px;
-            width: 60px;
+            left: 15px;
+            width: 45px;
             height: 730px;
-            border-left: 28px solid #0288d1;
-            border-bottom: 28px solid #0288d1;
-            border-top: 28px solid #0288d1;
-            border-top-left-radius: 40px;
-            border-bottom-left-radius: 40px;
+            border-left: 24px solid #0288d1;
+            border-bottom: 24px solid #0288d1;
+            border-top: 24px solid #0288d1;
+            border-top-left-radius: 35px;
+            border-bottom-left-radius: 35px;
             z-index: 1;
         }}
         /* つかむへ入る右向きの矢印先端 */
         .tsunagu-arrow-right {{
             position: absolute;
-            top: 72px;
-            left: 58px;
+            top: 75px;
+            left: 42px;
             width: 0;
             height: 0;
-            border-top: 32px solid transparent;
-            border-bottom: 32px solid transparent;
-            border-left: 40px solid #0288d1;
+            border-top: 26px solid transparent;
+            border-bottom: 26px solid transparent;
+            border-left: 32px solid #0288d1;
             z-index: 2;
         }}
         .tsunagu-label {{
             position: absolute;
             top: 410px;
             left: -12px;
-            font-size: 16pt;
+            font-size: 15pt;
             font-weight: bold;
             color: #0288d1;
             writing-mode: vertical-rl;
@@ -404,7 +424,8 @@ with col_preview:
         /* 場面間の下向き太矢印 */
         .down-arrow {{
             position: absolute;
-            left: 360px;
+            left: 50%;
+            transform: translateX(-50%);
             width: 0;
             height: 0;
             border-left: 18px solid transparent;
@@ -519,7 +540,7 @@ with col_preview:
     preview_html += f'''
     </div>
 
-    <!-- 2ページ目：指導課程（図解デザイン・太矢印＆「つかむ」へ入るループ矢印） -->
+    <!-- 2ページ目：指導課程（図解デザイン・幅調整＆途中保存対応版） -->
     <div class="page">
         <div class="page-title">■ 指導課程（三松メソッド・構造図解）</div>
         <div class="diagram-container">
@@ -530,7 +551,7 @@ with col_preview:
             <div class="tsunagu-label">つなぐ</div>
 
             <!-- ① つかむ -->
-            <div class="phase-block" style="top: 20px; left: 100px;">
+            <div class="phase-block" style="top: 20px;">
                 <div class="phase-title-text">① つかむ</div>
                 <div class="phase-inner">
                     <div class="phase-left">
@@ -549,7 +570,7 @@ with col_preview:
             <div class="down-arrow" style="top: 205px;"></div>
 
             <!-- ② 考える -->
-            <div class="phase-block" style="top: 250px; left: 100px;">
+            <div class="phase-block" style="top: 250px;">
                 <div class="phase-title-text">② 考える</div>
                 <div class="phase-inner">
                     <div class="phase-left">
@@ -568,7 +589,7 @@ with col_preview:
             <div class="down-arrow" style="top: 435px;"></div>
 
             <!-- ③ 学び合う -->
-            <div class="phase-block" style="top: 480px; left: 100px;">
+            <div class="phase-block" style="top: 480px;">
                 <div class="phase-title-text">③ 学び合う</div>
                 <div class="phase-inner">
                     <div class="phase-left">
@@ -587,7 +608,7 @@ with col_preview:
             <div class="down-arrow" style="top: 665px;"></div>
 
             <!-- ④ まとめる・振り返る -->
-            <div class="phase-block" style="top: 710px; left: 100px;">
+            <div class="phase-block" style="top: 710px;">
                 <div class="phase-title-text">④ まとめる・振り返る</div>
                 <div class="phase-inner">
                     <div class="phase-left">
