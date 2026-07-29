@@ -1,4 +1,5 @@
 import streamlit as st
+import json
 
 st.set_page_config(
     page_title="授業計画シート作成アプリ（三松メソッド）",
@@ -56,6 +57,26 @@ with st.sidebar:
     st.write(f"**教科**: {d_sb.get('subject', '未入力')}")
     st.write(f"**授業者**: {d_sb.get('teacher', '未入力')}")
     st.write(f"**単元**: {d_sb.get('unit_title', '未入力')}")
+    st.divider()
+    
+    # JSONデータでのダウンロード＆復元
+    json_str = json.dumps(d_sb, ensure_ascii=False, indent=2)
+    st.download_button(
+        label="💾 入力データを保存(JSON)",
+        data=json_str,
+        file_name="lesson_plan_data.json",
+        mime="application/json"
+    )
+    
+    uploaded_file = st.file_uploader("📂 保存したJSONを読み込み", type=["json"])
+    if uploaded_file is not None:
+        try:
+            st.session_state.data = json.load(uploaded_file)
+            st.success("データを復元しました！")
+            st.rerun()
+        except Exception as e:
+            st.error("ファイルの読み込みに失敗しました。")
+
     st.divider()
     if st.button("🔄 最初からやり直す"):
         st.session_state.clear()
@@ -219,16 +240,42 @@ with col_preview:
         return " / ".join(skills)
 
     preview_html = f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
     <style>
+        @media print {{
+            .no-print {{ display: none !important; }}
+            .page {{ border: none !important; box-shadow: none !important; margin: 0 !important; page-break-after: always; }}
+        }}
+        body {{
+            font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 10px;
+        }}
+        .print-btn {{
+            background-color: #0288d1;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }}
+        .print-btn:hover {{ background-color: #01579b; }}
         .page {{
             background-color: #ffffff;
             padding: 20px;
             border: 2px solid #333;
-            font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
             font-size: 9.5pt;
             color: #000;
             margin-bottom: 25px;
             position: relative;
+            box-sizing: border-box;
         }}
         .page-title {{
             text-align: center;
@@ -252,86 +299,114 @@ with col_preview:
             background-color: #f2f2f2;
             text-align: center;
         }}
-        
-        /* 2ページ目（指導課程図解・レイアウト調整版） */
+
+        /* 2ページ目（指導課程図解・完全修正版） */
         .diagram-container {{
             position: relative;
             width: 100%;
-            height: 900px;
+            height: 980px;
             background: #fff;
             border: 1px solid #ccc;
+            box-sizing: border-box;
         }}
-        .box-cyan {{
+        
+        /* カード（各段階セット） */
+        .phase-block {{
             position: absolute;
-            background-color: #e0f7fa;
+            width: 580px;
             border: 2px solid #00bcd4;
+            background-color: #e0f7fa;
             border-radius: 10px;
-            padding: 8px 10px;
-            font-size: 8.5pt;
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.08);
-            overflow: hidden;
+            padding: 10px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
         }}
-        .box-cyan h3 {{
-            margin: 0 0 4px 0;
-            text-align: center;
-            font-size: 11pt;
+        .phase-title-text {{
+            font-size: 12pt;
+            font-weight: bold;
             text-decoration: underline;
-            color: #000;
+            margin-bottom: 5px;
+            text-align: center;
         }}
-        .box-dark {{
-            position: absolute;
+        .phase-inner {{
+            display: flex;
+            gap: 10px;
+        }}
+        .phase-left {{
+            flex: 1.2;
+            font-size: 8.5pt;
+        }}
+        .phase-right {{
+            flex: 1;
             background-color: #1a5276;
             color: #fff;
-            padding: 6px 10px;
-            font-size: 8pt;
+            padding: 6px 8px;
             border-radius: 6px;
-            overflow: hidden;
+            font-size: 8pt;
         }}
-        .skill-badge {{
-            position: absolute;
-            border: 2px solid #ff9800;
-            background: #fff;
-            border-radius: 6px;
-            padding: 2px 8px;
-            font-weight: bold;
-            font-size: 8pt;
+        .skill-tag {{
+            display: inline-block;
+            background-color: #fff;
+            border: 1.5px solid #ff9800;
             color: #333;
-            z-index: 15;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 8pt;
+            margin-top: 4px;
         }}
-        .arrow-tsunagu {{
+
+        /* ループ矢印（つなぐ） */
+        .tsunagu-path {{
             position: absolute;
-            top: 130px;
-            left: 90px;
-            width: 220px;
-            height: 520px;
-            border-left: 28px solid #0288d1;
-            border-bottom: 28px solid #0288d1;
-            border-bottom-left-radius: 140px;
+            top: 40px;
+            left: 20px;
+            width: 50px;
+            height: 860px;
+            border-left: 20px solid #0288d1;
+            border-top: 20px solid #0288d1;
+            border-bottom: 20px solid #0288d1;
+            border-top-left-radius: 60px;
+            border-bottom-left-radius: 60px;
             z-index: 1;
         }}
-        .arrow-head {{
+        .tsunagu-arrow-up {{
             position: absolute;
-            top: 115px;
-            left: 75px;
+            top: 25px;
+            left: 22px;
             width: 0;
             height: 0;
-            border-left: 28px solid transparent;
-            border-right: 28px solid transparent;
-            border-bottom: 40px solid #0288d1;
-            transform: rotate(-25deg);
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 35px solid #0288d1;
             z-index: 2;
         }}
-        .text-tsunagu {{
+        .tsunagu-label {{
             position: absolute;
-            top: 160px;
-            left: 25px;
-            font-size: 15pt;
+            top: 440px;
+            left: -10px;
+            font-size: 16pt;
             font-weight: bold;
-            text-decoration: underline;
             color: #0288d1;
+            writing-mode: vertical-rl;
+            letter-spacing: 4px;
+            background: #fff;
+            padding: 5px 2px;
             z-index: 3;
         }}
+        .down-arrow {{
+            text-align: center;
+            font-size: 20pt;
+            color: #0288d1;
+            font-weight: bold;
+            line-height: 1;
+            margin: 2px 0;
+        }}
     </style>
+    </head>
+    <body>
+
+    <button class="print-btn no-print" onclick="window.print()">🖨️ このシートを印刷 / PDF保存</button>
 
     <!-- 1ページ目：基本情報・単元計画・指導課程（表形式） -->
     <div class="page">
@@ -434,70 +509,87 @@ with col_preview:
     preview_html += f'''
     </div>
 
-    <!-- 2ページ目：指導課程（図解デザイン・重なり完全解消版） -->
+    <!-- 2ページ目：指導課程（図解デザイン・つなぐ矢印・近接セット配置） -->
     <div class="page">
-        <div class="page-title">■ 指導課程（三松メソッド・図解構造）</div>
+        <div class="page-title">■ 指導課程（三松メソッド・構造図解）</div>
         <div class="diagram-container">
             
-            <!-- 大きな「つなぐ」矢印 -->
-            <div class="arrow-head"></div>
-            <div class="arrow-tsunagu"></div>
-            <div class="text-tsunagu">つなぐ</div>
+            <!-- ループ（つなぐ）矢印構造 -->
+            <div class="tsunagu-path"></div>
+            <div class="tsunagu-arrow-up"></div>
+            <div class="tsunagu-label">つなぐ</div>
 
             <!-- ① つかむ -->
-            <div class="box-cyan" style="top: 20px; left: 30px; width: 330px; height: 110px; z-index: 10;">
-                <h3>つかむ</h3>
-                <b>学習内容:</b> {tsukamu['content']}<br>
-                <b>手立て:</b> {tsukamu['tedate']}
+            <div class="phase-block" style="top: 20px; left: 90px;">
+                <div class="phase-title-text">① つかむ</div>
+                <div class="phase-inner">
+                    <div class="phase-left">
+                        <b>学習内容:</b> {tsukamu['content']}<br>
+                        <b>手立て:</b> {tsukamu['tedate']}<br>
+                        <div class="skill-tag">💡 思考スキル: {fmt_skills(tsukamu['skills'])}</div>
+                    </div>
+                    <div class="phase-right">
+                        <b>教員が意図する生徒の姿:</b><br>
+                        {tsukamu['target_student'].replace('\n', '<br>')}
+                    </div>
+                </div>
             </div>
-            <div class="skill-badge" style="top: 15px; right: 30px;">
-                思考スキル（ {fmt_skills(tsukamu['skills'])} ）
-            </div>
-            <div class="box-dark" style="top: 50px; right: 20px; width: 220px; height: 80px; z-index: 10;">
-                <b>教員が意図する生徒の姿</b><br>
-                {tsukamu['target_student'].replace('\n', '<br>')}
-            </div>
+
+            <!-- 矢印 ↓ -->
+            <div style="position: absolute; top: 225px; left: 360px;" class="down-arrow">↓</div>
 
             <!-- ② 考える -->
-            <div class="box-cyan" style="top: 190px; right: 40px; width: 330px; height: 110px; z-index: 10;">
-                <h3>考える</h3>
-                <b>学習内容:</b> {kangaeru['content']}<br>
-                <b>手立て:</b> {kangaeru['tedate']}
+            <div class="phase-block" style="top: 260px; left: 90px;">
+                <div class="phase-title-text">② 考える</div>
+                <div class="phase-inner">
+                    <div class="phase-left">
+                        <b>学習内容:</b> {kangaeru['content']}<br>
+                        <b>手立て:</b> {kangaeru['tedate']}<br>
+                        <div class="skill-tag">💡 思考スキル: {fmt_skills(kangaeru['skills'])}</div>
+                    </div>
+                    <div class="phase-right">
+                        <b>教員が意図する生徒の姿:</b><br>
+                        {kangaeru['target_student'].replace('\n', '<br>')}
+                    </div>
+                </div>
             </div>
-            <div class="skill-badge" style="top: 320px; right: 50px;">
-                思考スキル（ {fmt_skills(kangaeru['skills'])} ）
-            </div>
-            <div class="box-dark" style="top: 355px; right: 40px; width: 220px; height: 80px; z-index: 10;">
-                <b>教員が意図する生徒の姿</b><br>
-                {kangaeru['target_student'].replace('\n', '<br>')}
-            </div>
+
+            <!-- 矢印 ↓ -->
+            <div style="position: absolute; top: 465px; left: 360px;" class="down-arrow">↓</div>
 
             <!-- ③ 学び合う -->
-            <div class="box-cyan" style="top: 480px; right: 140px; width: 330px; height: 110px; z-index: 10;">
-                <h3>学び合う</h3>
-                <b>学習内容:</b> {manabi['content']}<br>
-                <b>手立て:</b> {manabi['tedate']}
-            </div>
-            <div class="skill-badge" style="top: 610px; right: 150px;">
-                思考スキル（ {fmt_skills(manabi['skills'])} ）
-            </div>
-            <div class="box-dark" style="top: 645px; right: 140px; width: 220px; height: 80px; z-index: 10;">
-                <b>教員が意図する生徒の姿</b><br>
-                {manabi['target_student'].replace('\n', '<br>')}
+            <div class="phase-block" style="top: 500px; left: 90px;">
+                <div class="phase-title-text">③ 学び合う</div>
+                <div class="phase-inner">
+                    <div class="phase-left">
+                        <b>学習内容:</b> {manabi['content']}<br>
+                        <b>手立て:</b> {manabi['tedate']}<br>
+                        <div class="skill-tag">💡 思考スキル: {fmt_skills(manabi['skills'])}</div>
+                    </div>
+                    <div class="phase-right">
+                        <b>教員が意図する生徒の姿:</b><br>
+                        {manabi['target_student'].replace('\n', '<br>')}
+                    </div>
+                </div>
             </div>
 
+            <!-- 矢印 ↓ -->
+            <div style="position: absolute; top: 705px; left: 360px;" class="down-arrow">↓</div>
+
             <!-- ④ まとめる・振り返る -->
-            <div class="box-cyan" style="top: 730px; left: 20px; width: 330px; height: 110px; z-index: 10;">
-                <h3 style="font-size:11pt;">まとめる・振り返る</h3>
-                <b>学習内容:</b> {matomeru['content']}<br>
-                <b>手立て:</b> {matomeru['tedate']}
-            </div>
-            <div class="skill-badge" style="top: 725px; right: 30px;">
-                思考スキル（ {fmt_skills(matomeru['skills'])} ）
-            </div>
-            <div class="box-dark" style="top: 760px; right: 20px; width: 220px; height: 80px; z-index: 10;">
-                <b>教員が意図する生徒の姿</b><br>
-                {matomeru['target_student'].replace('\n', '<br>')}
+            <div class="phase-block" style="top: 740px; left: 90px;">
+                <div class="phase-title-text">④ まとめる・振り返る</div>
+                <div class="phase-inner">
+                    <div class="phase-left">
+                        <b>学習内容:</b> {matomeru['content']}<br>
+                        <b>手立て:</b> {matomeru['tedate']}<br>
+                        <div class="skill-tag">💡 思考スキル: {fmt_skills(matomeru['skills'])}</div>
+                    </div>
+                    <div class="phase-right">
+                        <b>教員が意図する生徒の姿:</b><br>
+                        {matomeru['target_student'].replace('\n', '<br>')}
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -505,5 +597,8 @@ with col_preview:
             ※ 各教科の見方・考え方は学習指導要領の解説 教科の目標を参考にする
         </div>
     </div>
+
+    </body>
+    </html>
     '''
-    st.components.v1.html(preview_html, height=2200, scrolling=True)
+    st.components.v1.html(preview_html, height=2300, scrolling=True)
