@@ -300,7 +300,7 @@ with col_preview:
             text-align: center;
         }}
 
-        /* 2ページ目（指導課程図解・完全修正版） */
+        /* 2ページ目（指導課程図解・太矢印＆固定枠版） */
         .diagram-container {{
             position: relative;
             width: 100%;
@@ -310,16 +310,18 @@ with col_preview:
             box-sizing: border-box;
         }}
         
-        /* カード（各段階セット） */
+        /* 固定サイズのカード（各場面セット） */
         .phase-block {{
             position: absolute;
             width: 580px;
+            height: 155px; /* 高さを一定に固定 */
             border: 2px solid #00bcd4;
             background-color: #e0f7fa;
             border-radius: 10px;
             padding: 10px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.08);
             z-index: 10;
+            box-sizing: border-box;
         }}
         .phase-title-text {{
             font-size: 12pt;
@@ -331,10 +333,12 @@ with col_preview:
         .phase-inner {{
             display: flex;
             gap: 10px;
+            height: 105px;
         }}
         .phase-left {{
             flex: 1.2;
             font-size: 8.5pt;
+            overflow: auto;
         }}
         .phase-right {{
             flex: 1;
@@ -343,6 +347,7 @@ with col_preview:
             padding: 6px 8px;
             border-radius: 6px;
             font-size: 8pt;
+            overflow: auto;
         }}
         .skill-tag {{
             display: inline-block;
@@ -356,35 +361,36 @@ with col_preview:
             margin-top: 4px;
         }}
 
-        /* ループ矢印（つなぐ） */
+        /* 「つなぐ」太い循環矢印構造 */
         .tsunagu-path {{
             position: absolute;
-            top: 40px;
+            top: 90px;
             left: 20px;
-            width: 50px;
-            height: 860px;
-            border-left: 20px solid #0288d1;
-            border-top: 20px solid #0288d1;
-            border-bottom: 20px solid #0288d1;
-            border-top-left-radius: 60px;
-            border-bottom-left-radius: 60px;
+            width: 60px;
+            height: 730px;
+            border-left: 28px solid #0288d1;
+            border-bottom: 28px solid #0288d1;
+            border-top: 28px solid #0288d1;
+            border-top-left-radius: 40px;
+            border-bottom-left-radius: 40px;
             z-index: 1;
         }}
-        .tsunagu-arrow-up {{
+        /* つかむへ入る右向きの矢印先端 */
+        .tsunagu-arrow-right {{
             position: absolute;
-            top: 25px;
-            left: 22px;
+            top: 72px;
+            left: 58px;
             width: 0;
             height: 0;
-            border-left: 25px solid transparent;
-            border-right: 25px solid transparent;
-            border-bottom: 35px solid #0288d1;
+            border-top: 32px solid transparent;
+            border-bottom: 32px solid transparent;
+            border-left: 40px solid #0288d1;
             z-index: 2;
         }}
         .tsunagu-label {{
             position: absolute;
-            top: 440px;
-            left: -10px;
+            top: 410px;
+            left: -12px;
             font-size: 16pt;
             font-weight: bold;
             color: #0288d1;
@@ -394,13 +400,17 @@ with col_preview:
             padding: 5px 2px;
             z-index: 3;
         }}
+
+        /* 場面間の下向き太矢印 */
         .down-arrow {{
-            text-align: center;
-            font-size: 20pt;
-            color: #0288d1;
-            font-weight: bold;
-            line-height: 1;
-            margin: 2px 0;
+            position: absolute;
+            left: 360px;
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-top: 26px solid #0288d1;
+            z-index: 5;
         }}
     </style>
     </head>
@@ -509,18 +519,18 @@ with col_preview:
     preview_html += f'''
     </div>
 
-    <!-- 2ページ目：指導課程（図解デザイン・つなぐ矢印・近接セット配置） -->
+    <!-- 2ページ目：指導課程（図解デザイン・太矢印＆「つかむ」へ入るループ矢印） -->
     <div class="page">
         <div class="page-title">■ 指導課程（三松メソッド・構造図解）</div>
         <div class="diagram-container">
             
-            <!-- ループ（つなぐ）矢印構造 -->
+            <!-- ループ（つなぐ）太い矢印構造 -->
             <div class="tsunagu-path"></div>
-            <div class="tsunagu-arrow-up"></div>
+            <div class="tsunagu-arrow-right"></div>
             <div class="tsunagu-label">つなぐ</div>
 
             <!-- ① つかむ -->
-            <div class="phase-block" style="top: 20px; left: 90px;">
+            <div class="phase-block" style="top: 20px; left: 100px;">
                 <div class="phase-title-text">① つかむ</div>
                 <div class="phase-inner">
                     <div class="phase-left">
@@ -535,11 +545,11 @@ with col_preview:
                 </div>
             </div>
 
-            <!-- 矢印 ↓ -->
-            <div style="position: absolute; top: 225px; left: 360px;" class="down-arrow">↓</div>
+            <!-- 下向き矢印 ↓ -->
+            <div class="down-arrow" style="top: 205px;"></div>
 
             <!-- ② 考える -->
-            <div class="phase-block" style="top: 260px; left: 90px;">
+            <div class="phase-block" style="top: 250px; left: 100px;">
                 <div class="phase-title-text">② 考える</div>
                 <div class="phase-inner">
                     <div class="phase-left">
@@ -554,11 +564,11 @@ with col_preview:
                 </div>
             </div>
 
-            <!-- 矢印 ↓ -->
-            <div style="position: absolute; top: 465px; left: 360px;" class="down-arrow">↓</div>
+            <!-- 下向き矢印 ↓ -->
+            <div class="down-arrow" style="top: 435px;"></div>
 
             <!-- ③ 学び合う -->
-            <div class="phase-block" style="top: 500px; left: 90px;">
+            <div class="phase-block" style="top: 480px; left: 100px;">
                 <div class="phase-title-text">③ 学び合う</div>
                 <div class="phase-inner">
                     <div class="phase-left">
@@ -573,11 +583,11 @@ with col_preview:
                 </div>
             </div>
 
-            <!-- 矢印 ↓ -->
-            <div style="position: absolute; top: 705px; left: 360px;" class="down-arrow">↓</div>
+            <!-- 下向き矢印 ↓ -->
+            <div class="down-arrow" style="top: 665px;"></div>
 
             <!-- ④ まとめる・振り返る -->
-            <div class="phase-block" style="top: 740px; left: 90px;">
+            <div class="phase-block" style="top: 710px; left: 100px;">
                 <div class="phase-title-text">④ まとめる・振り返る</div>
                 <div class="phase-inner">
                     <div class="phase-left">
