@@ -15,11 +15,14 @@ THINKING_SKILLS = {
 
 ALL_SKILLS_FLAT = [skill for cat in THINKING_SKILLS.values() for skill in cat]
 
+# 質問リスト（表記修正＆生徒の実態・指導上の工夫を追加）
 QUESTIONS = [
     {"key": "subject", "label": "教科名", "type": "text", "prompt": "まずは【教科名】を入力してください。（例: 国語、数学、社会）"},
     {"key": "teacher", "label": "授業者", "type": "text", "prompt": "【授業者名】を入力してください。（例: 山田 太郎）"},
     {"key": "unit_title", "label": "単元（題材）名", "type": "text", "prompt": "【単元（題材）名】を入力してください。（例: ごんぎつね、1次関数）"},
     {"key": "unit_goal", "label": "単元（題材）の目標", "type": "textarea", "prompt": "【単元（題材）の目標】を入力してください。"},
+    {"key": "student_status", "label": "生徒の実態", "type": "textarea", "prompt": "【生徒の実態】を入力してください。"},
+    {"key": "teaching_ideas", "label": "指導上の工夫", "type": "textarea", "prompt": "【指導上の工夫】を入力してください。"},
     {"key": "viewpoint", "label": "本単元における教科の見方・考え方", "type": "textarea", "prompt": "【本単元における教科の見方・考え方】を入力してください。"},
     {"key": "total_hours", "label": "単元の総時間数", "type": "number", "prompt": "この単元は何時間設定ですか？（例: 5時間なら 5）"},
 ]
@@ -206,8 +209,20 @@ with col_preview:
                 <td style="border:1px solid #333; width:35%; padding:4px;">{d.get("teacher", "")}</td>
             </tr>
             <tr>
-                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">単元の目標</th>
+                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">単元（題材）名</th>
+                <td colspan="3" style="border:1px solid #333; padding:4px;">{d.get("unit_title", "")}</td>
+            </tr>
+            <tr>
+                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">単元（題材）の目標</th>
                 <td colspan="3" style="border:1px solid #333; padding:4px;">{d.get("unit_goal", "").replace('\n', '<br>')}</td>
+            </tr>
+            <tr>
+                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">生徒の実態</th>
+                <td colspan="3" style="border:1px solid #333; padding:4px;">{d.get("student_status", "").replace('\n', '<br>')}</td>
+            </tr>
+            <tr>
+                <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">指導上の工夫</th>
+                <td colspan="3" style="border:1px solid #333; padding:4px;">{d.get("teaching_ideas", "").replace('\n', '<br>')}</td>
             </tr>
             <tr>
                 <th style="border:1px solid #333; background:#f2f2f2; padding:4px;">教科の見方・考え方</th>
@@ -271,4 +286,4 @@ with col_preview:
         </div>
         '''
     preview_html += "</div>"
-    st.components.v1.html(preview_html, height=750, scrolling=True)
+    st.components.v1.html(preview_html, height=850, scrolling=True)
