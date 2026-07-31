@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import json
 
 # 1. ページ基本設定
@@ -28,26 +27,15 @@ QUESTIONS = [
     {"key": "total_hours", "label": "単元の総時間数", "type": "number", "prompt": "この単元は何時間設定ですか？（例: 5時間なら 5）"},
 ]
 
-MATSUMATSU_PHASES = [
-    {"key": "tsukamu", "title": "① つかむ"},
-    {"key": "kangaeru", "title": "② 考える"},
-    {"key": "manabi", "title": "③ 学び合う"},
-    {"key": "matomeru", "title": "④ まとめる・振り返る"}
-]
-
 # セッション状態の初期化
 if "step" not in st.session_state:
     st.session_state.step = 0
 if "data" not in st.session_state:
-    st.session_state.data = {"unit_plan": [], "matsumatsu": {}}
+    st.session_state.data = {}
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         {"role": "assistant", "content": "こんにちは！授業計画シート作成ボットです。質問に順番に答えていくと、三松メソッドに沿った授業計画シートが完成します。\n\nまずは【教科名】を入力してください。"}
     ]
-if "hours_done" not in st.session_state:
-    st.session_state.hours_done = 0
-if "matsumatsu_step" not in st.session_state:
-    st.session_state.matsumatsu_step = 0
 
 st.title("📝 授業計画シート作成アプリ（三松メソッド対応）")
 
@@ -57,9 +45,7 @@ with st.sidebar:
     save_data = {
         "step": st.session_state.step,
         "data": st.session_state.data,
-        "chat_history": st.session_state.chat_history,
-        "hours_done": st.session_state.hours_done,
-        "matsumatsu_step": st.session_state.matsumatsu_step
+        "chat_history": st.session_state.chat_history
     }
     json_str = json.dumps(save_data, ensure_ascii=False, indent=2)
     st.download_button("💾 作業データを保存(JSON)", data=json_str, file_name="lesson_plan.json", mime="application/json")
@@ -69,10 +55,8 @@ with st.sidebar:
         try:
             loaded_state = json.load(uploaded_file)
             st.session_state.step = loaded_state.get("step", 0)
-            st.session_state.data = loaded_state.get("data", {"unit_plan": [], "matsumatsu": {}})
+            st.session_state.data = loaded_state.get("data", {})
             st.session_state.chat_history = loaded_state.get("chat_history", [])
-            st.session_state.hours_done = loaded_state.get("hours_done", 0)
-            st.session_state.matsumatsu_step = loaded_state.get("matsumatsu_step", 0)
             st.success("読み込み完了！")
             st.rerun()
         except Exception:
@@ -83,7 +67,7 @@ with st.sidebar:
         st.session_state.clear()
         st.rerun()
 
-# メインレイアウト（対話画面と確認画面）
+# メインレイアウト
 col_chat, col_preview = st.columns([1, 1])
 
 with col_chat:
