@@ -130,16 +130,13 @@ def safe_html(text):
 def go_back_step():
   step = st.session_state.step
   if step == 0:
-    return  # 最初のステップなら戻れない
+    return
 
-  # 指導課程（①〜④）の途中から戻る場合
   if step == len(QUESTIONS) + 2:
     if st.session_state.matsumatsu_step > 0:
       st.session_state.matsumatsu_step -= 1
     else:
       st.session_state.step -= 1
-
-  # 本時選択から単元計画へ戻る場合
   elif step == len(QUESTIONS) + 1:
     st.session_state.step -= 1
     st.session_state.hours_done = (
@@ -147,8 +144,6 @@ def go_back_step():
     )
     if st.session_state.data.get("unit_plan"):
       st.session_state.data["unit_plan"].pop()
-
-  # 単元計画の途中で戻る場合
   elif step == len(QUESTIONS):
     if st.session_state.hours_done > 0:
       st.session_state.hours_done -= 1
@@ -156,12 +151,9 @@ def go_back_step():
         st.session_state.data["unit_plan"].pop()
     else:
       st.session_state.step -= 1
-
-  # 基本情報（質問0〜7）の中で戻る場合
   else:
     st.session_state.step -= 1
 
-  # チャット履歴を2つ分削除（ユーザーの回答 と アシスタントの次の質問）
   if len(st.session_state.chat_history) >= 2:
     st.session_state.chat_history.pop()
     st.session_state.chat_history.pop()
@@ -237,7 +229,6 @@ with col_chat:
 
   step = st.session_state.step
 
-  # 「前の項目に戻る」ボタン（最初のステップ以外で表示）
   if (
       step > 0
       or st.session_state.hours_done > 0
@@ -246,10 +237,8 @@ with col_chat:
     if st.button("⬅️ 前の質問に戻って修正する"):
       go_back_step()
 
-  # 基本情報入力
   if step < len(QUESTIONS):
     q = QUESTIONS[step]
-    # 既存の入力値があればデフォルト値としてセット
     default_val = st.session_state.data.get(q["key"], "")
 
     with st.form(key=f"form_step_{step}", clear_on_submit=True):
@@ -286,7 +275,6 @@ with col_chat:
           })
         st.rerun()
 
-  # 単元計画入力
   elif step == len(QUESTIONS):
     total_hours = int(st.session_state.data["total_hours"])
     curr_h = st.session_state.hours_done + 1
@@ -331,7 +319,6 @@ with col_chat:
             })
           st.rerun()
 
-  # 本時選択
   elif step == len(QUESTIONS) + 1:
     total_hours = int(st.session_state.data["total_hours"])
     with st.form(key="form_honshi", clear_on_submit=True):
@@ -359,14 +346,12 @@ with col_chat:
         })
         st.rerun()
 
-  # 指導課程入力
   elif step == len(QUESTIONS) + 2:
     m_step = st.session_state.matsumatsu_step
     if m_step < len(MATSUMATSU_PHASES):
       phase = MATSUMATSU_PHASES[m_step]
       st.write(f"### 📍 指導課程: {phase['title']}")
 
-      # 既存入力データ
       existing_p = (
           st.session_state.data.get("matsumatsu", {}).get(phase["key"], {})
       )
@@ -431,7 +416,7 @@ with col_chat:
 with col_preview:
   st.subheader("📄 指導計画シート プレビュー")
 
-  # ★動作軽量化のための切り替えスイッチ★
+  # 動作軽量化のための切り替えスイッチ
   show_preview = st.toggle(
       "👁️ プレビューを表示する（入力作業中はOFFにすると高速動作します）",
       value=False,
@@ -440,8 +425,11 @@ with col_preview:
   if not show_preview:
     st.info(
         "💡 **軽量化モード作動中**\n\n"
-        "同時アクセスによる画面の固定を防ぐため、入力中のプレビュー自動描画を停止しています。\n\n"
-        "入力がすべて完了した後や、シートを確認・印刷・PDF保存したいときだけ、上のスイッチを **ON** にしてください。"
+        "複数人でアクセスした際に**画面がフリーズするのを防ぐため**、入力中の自動プレビュー表示を一時停止しています。\n\n"
+        "⚠️ **お願い**\n"
+        "万が一のブラウザトラブル等に備え、入力作業中は左側の **「💾 作業途中のデータを保存(JSON)」**"
+        " ボタンで定期的にデータをダウンロード保存してください。\n\n"
+        "※ 入力が完了した際や、完成したシートを確認・印刷・PDF保存したい時だけ、上のスイッチを **ON** にしてください。"
     )
   else:
     d = st.session_state.data
@@ -798,7 +786,7 @@ with col_preview:
                             <div class="skill-badge">💡 思考スキル: {safe_html(fmt_skills(kangaeru['skills']))}</div>
                         </div>
                         <div class="phase-card-right">
-                            <b>教員特征とする生徒の姿:</b><br>
+                            <b>教員が意図する生徒の姿:</b><br>
                             {safe_html(kangaeru['target_student'])}
                         </div>
                     </div>
