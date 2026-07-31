@@ -1,311 +1,457 @@
-import streamlit as st
-import json
 import html
+import json
+import streamlit as st
 
 st.set_page_config(
     page_title="授業計画シート作成アプリ（三松メソッド）",
     page_icon="📝",
-    layout="wide"
+    layout="wide",
 )
 
 # 19の思考スキル定義
 THINKING_SKILLS = {
-    "分析・整理": ["多面的にみる", "順序立てる", "分類する", "変化をとらえる", "比較する", "変換する(図・絵など)"],
-    "関係・構造": ["関係づける", "関連づける", "理由づける", "見通す", "構造化する"],
-    "統合・評価": ["抽象化する", "焦点化する", "評価する", "応用する", "推論する", "具体化する", "広げてみる", "要約する"]
+    "分析・整理": [
+        "多面的にみる",
+        "順序立てる",
+        "分類する",
+        "変化をとらえる",
+        "比較する",
+        "変換する(図・絵など)",
+    ],
+    "関係・構造": [
+        "関係づける",
+        "関連づける",
+        "理由づける",
+        "見通す",
+        "構造化する",
+    ],
+    "統合・評価": [
+        "抽象化する",
+        "焦点化する",
+        "評価する",
+        "応用する",
+        "推論する",
+        "具体化する",
+        "広げてみる",
+        "要約する",
+    ],
 }
 
 ALL_SKILLS_FLAT = [skill for cat in THINKING_SKILLS.values() for skill in cat]
 
 QUESTIONS = [
-    {"key": "subject", "label": "教科名", "type": "text", "prompt": "まずは【教科名】を入力してください。（例: 国語、数学、社会）"},
-    {"key": "teacher", "label": "授業者", "type": "text", "prompt": "【授業者名】を入力してください。（例: 山田 太郎）"},
-    {"key": "unit_title", "label": "単元（題材）名", "type": "text", "prompt": "【単元（題材）名】を入力してください。（例: ごんぎつね、1次関数）"},
-    {"key": "unit_goal", "label": "単元（題材）の目標", "type": "textarea", "prompt": "【単元（題材）の目標】を入力してください。"},
-    {"key": "student_status", "label": "生徒の実態", "type": "textarea", "prompt": "【生徒の実態】を入力してください。"},
-    {"key": "teaching_ideas", "label": "指導上の工夫", "type": "textarea", "prompt": "【指導上の工夫】を入力してください。"},
-    {"key": "viewpoint", "label": "本単元における教科の見方・考え方", "type": "textarea", "prompt": "【本単元における教科の見方・考え方】を入力してください。"},
-    {"key": "total_hours", "label": "単元の総時間数", "type": "number", "prompt": "この単元は何時間設定ですか？（例: 5時間なら 5）"},
+    {
+        "key": "subject",
+        "label": "教科名",
+        "type": "text",
+        "prompt": "まずは【教科名】を入力してください。（例: 国語、数学、社会）",
+    },
+    {
+        "key": "teacher",
+        "label": "授業者",
+        "type": "text",
+        "prompt": "【授業者名】を入力してください。（例: 山田 太郎）",
+    },
+    {
+        "key": "unit_title",
+        "label": "単元（題材）名",
+        "type": "text",
+        "prompt": (
+            "【単元（題材）名】を入力してください。（例:"
+            " ごんぎつね、1次関数）"
+        ),
+    },
+    {
+        "key": "unit_goal",
+        "label": "単元（題材）の目標",
+        "type": "textarea",
+        "prompt": "【単元（題材）の目標】を入力してください。",
+    },
+    {
+        "key": "student_status",
+        "label": "生徒の実態",
+        "type": "textarea",
+        "prompt": "【生徒の実態】を入力してください。",
+    },
+    {
+        "key": "teaching_ideas",
+        "label": "指導上の工夫",
+        "type": "textarea",
+        "prompt": "【指導上の工夫】を入力してください。",
+    },
+    {
+        "key": "viewpoint",
+        "label": "本単元における教科の見方・考え方",
+        "type": "textarea",
+        "prompt": "【本単元における教科の見方・考え方】を入力してください。",
+    },
+    {
+        "key": "total_hours",
+        "label": "単元の総時間数",
+        "type": "number",
+        "prompt": "この単元は何時間設定ですか？（例: 5時間なら 5）",
+    },
 ]
 
 MATSUMATSU_PHASES = [
     {"key": "tsukamu", "title": "① つかむ"},
     {"key": "kangaeru", "title": "② 考える"},
     {"key": "manabi", "title": "③ 学び合う"},
-    {"key": "matomeru", "title": "④ まとめる・振り返る"}
+    {"key": "matomeru", "title": "④ まとめる・振り返る"},
 ]
 
 # セッション状態の初期化
 if "step" not in st.session_state:
-    st.session_state.step = 0
+  st.session_state.step = 0
 if "data" not in st.session_state:
-    st.session_state.data = {"unit_plan": [], "matsumatsu": {}}
+  st.session_state.data = {"unit_plan": [], "matsumatsu": {}}
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [
-        {"role": "assistant", "content": "こんにちは！授業計画シート作成ボットです。質問に順番に答えていくと、三松メソッドに沿った授業計画シートが完成します。\n\nまずは【教科名】を入力してください。"}
-    ]
+  st.session_state.chat_history = [{
+      "role": "assistant",
+      "content": (
+          "こんにちは！授業計画シート作成ボットです。質問に順番に答えていくと、三松メソッドに沿った授業計画シートが完成します。\n\nまずは【教科名】を入力してください。"
+      ),
+  }]
 if "hours_done" not in st.session_state:
-    st.session_state.hours_done = 0
+  st.session_state.hours_done = 0
 if "matsumatsu_step" not in st.session_state:
-    st.session_state.matsumatsu_step = 0
+  st.session_state.matsumatsu_step = 0
+
 
 # 安全にHTML文字列化するヘルパー関数
 def safe_html(text):
-    if not text:
-        return ""
-    escaped = html.escape(str(text))
-    return escaped.replace("\n", "<br>")
+  if not text:
+    return ""
+  escaped = html.escape(str(text))
+  return escaped.replace("\n", "<br>")
+
 
 # 1つ前の項目に戻る関数
 def go_back_step():
-    step = st.session_state.step
-    if step == 0:
-        return # 最初のステップなら戻れない
-    
-    # 指導課程（①〜④）の途中から戻る場合
-    if step == len(QUESTIONS) + 2:
-        if st.session_state.matsumatsu_step > 0:
-            st.session_state.matsumatsu_step -= 1
-        else:
-            st.session_state.step -= 1
-            
-    # 本時選択から単元計画へ戻る場合
-    elif step == len(QUESTIONS) + 1:
-        st.session_state.step -= 1
-        st.session_state.hours_done = len(st.session_state.data.get("unit_plan", [])) - 1
-        if st.session_state.data.get("unit_plan"):
-            st.session_state.data["unit_plan"].pop()
+  step = st.session_state.step
+  if step == 0:
+    return  # 最初のステップなら戻れない
 
-    # 単元計画の途中で戻る場合
-    elif step == len(QUESTIONS):
-        if st.session_state.hours_done > 0:
-            st.session_state.hours_done -= 1
-            if st.session_state.data.get("unit_plan"):
-                st.session_state.data["unit_plan"].pop()
-        else:
-            st.session_state.step -= 1
-
-    # 基本情報（質問0〜7）の中で戻る場合
+  # 指導課程（①〜④）の途中から戻る場合
+  if step == len(QUESTIONS) + 2:
+    if st.session_state.matsumatsu_step > 0:
+      st.session_state.matsumatsu_step -= 1
     else:
-        st.session_state.step -= 1
+      st.session_state.step -= 1
 
-    # チャット履歴を2つ分削除（ユーザーの回答 と アシスタントの次の質問）
-    if len(st.session_state.chat_history) >= 2:
-        st.session_state.chat_history.pop()
-        st.session_state.chat_history.pop()
+  # 本時選択から単元計画へ戻る場合
+  elif step == len(QUESTIONS) + 1:
+    st.session_state.step -= 1
+    st.session_state.hours_done = (
+        len(st.session_state.data.get("unit_plan", [])) - 1
+    )
+    if st.session_state.data.get("unit_plan"):
+      st.session_state.data["unit_plan"].pop()
 
-    st.rerun()
+  # 単元計画の途中で戻る場合
+  elif step == len(QUESTIONS):
+    if st.session_state.hours_done > 0:
+      st.session_state.hours_done -= 1
+      if st.session_state.data.get("unit_plan"):
+        st.session_state.data["unit_plan"].pop()
+    else:
+      st.session_state.step -= 1
+
+  # 基本情報（質問0〜7）の中で戻る場合
+  else:
+    st.session_state.step -= 1
+
+  # チャット履歴を2つ分削除（ユーザーの回答 と アシスタントの次の質問）
+  if len(st.session_state.chat_history) >= 2:
+    st.session_state.chat_history.pop()
+    st.session_state.chat_history.pop()
+
+  st.rerun()
+
 
 st.title("📝 授業計画シート作成アプリ（三松メソッド対応）")
-st.caption("対話形式で質問に答えるだけで、初めての人でも分かりやすい指導計画シートを生成します。")
+st.caption(
+    "対話形式で質問に答えるだけで、初めての人でも分かりやすい指導計画シートを生成します。"
+)
 
 # サイドバー
 with st.sidebar:
-    st.header("💾 データの保存・再開")
-    save_data = {
-        "step": st.session_state.step,
-        "data": st.session_state.data,
-        "chat_history": st.session_state.chat_history,
-        "hours_done": st.session_state.hours_done,
-        "matsumatsu_step": st.session_state.matsumatsu_step
-    }
-    json_str = json.dumps(save_data, ensure_ascii=False, indent=2)
-    
-    st.download_button(
-        label="💾 作業途中のデータを保存(JSON)",
-        data=json_str,
-        file_name="lesson_plan_progress.json",
-        mime="application/json",
-        help="チャットの途中でも、このボタンで保存しておけば後から続きを再開できます。"
-    )
-    
-    uploaded_file = st.file_uploader("📂 保存データを読み込んで再開", type=["json"])
-    if uploaded_file is not None:
-        try:
-            loaded_state = json.load(uploaded_file)
-            st.session_state.step = loaded_state.get("step", 0)
-            st.session_state.data = loaded_state.get("data", {"unit_plan": [], "matsumatsu": {}})
-            st.session_state.chat_history = loaded_state.get("chat_history", [])
-            st.session_state.hours_done = loaded_state.get("hours_done", 0)
-            st.session_state.matsumatsu_step = loaded_state.get("matsumatsu_step", 0)
-            st.success("作業データを読み込みました！続きから再開できます。")
-            st.rerun()
-        except Exception as e:
-            st.error("ファイルの読み込みに失敗しました。正しいJSONファイルかご確認ください。")
+  st.header("💾 データの保存・再開")
+  save_data = {
+      "step": st.session_state.step,
+      "data": st.session_state.data,
+      "chat_history": st.session_state.chat_history,
+      "hours_done": st.session_state.hours_done,
+      "matsumatsu_step": st.session_state.matsumatsu_step,
+  }
+  json_str = json.dumps(save_data, ensure_ascii=False, indent=2)
 
-    st.divider()
-    st.header("📋 入力中のデータ概要")
-    d_sb = st.session_state.data
-    st.write(f"**教科**: {d_sb.get('subject', '未入力')}")
-    st.write(f"**授業者**: {d_sb.get('teacher', '未入力')}")
-    st.write(f"**単元**: {d_sb.get('unit_title', '未入力')}")
-    st.divider()
-    if st.button("🔄 最初からやり直す"):
-        st.session_state.clear()
-        st.rerun()
+  st.download_button(
+      label="💾 作業途中のデータを保存(JSON)",
+      data=json_str,
+      file_name="lesson_plan_progress.json",
+      mime="application/json",
+      help="チャットの途中でも、このボタンで保存しておけば後から続きを再開できます。",
+  )
+
+  uploaded_file = st.file_uploader(
+      "📂 保存データを読み込んで再開", type=["json"]
+  )
+  if uploaded_file is not None:
+    try:
+      loaded_state = json.load(uploaded_file)
+      st.session_state.step = loaded_state.get("step", 0)
+      st.session_state.data = loaded_state.get(
+          "data", {"unit_plan": [], "matsumatsu": {}}
+      )
+      st.session_state.chat_history = loaded_state.get("chat_history", [])
+      st.session_state.hours_done = loaded_state.get("hours_done", 0)
+      st.session_state.matsumatsu_step = loaded_state.get("matsumatsu_step", 0)
+      st.success("作業データを読み込みました！続きから再開できます。")
+      st.rerun()
+    except Exception as e:
+      st.error(
+          "ファイルの読み込みに失敗しました。正しいJSONファイルかご確認ください。"
+      )
+
+  st.divider()
+  st.header("📋 入力中のデータ概要")
+  d_sb = st.session_state.data
+  st.write(f"**教科**: {d_sb.get('subject', '未入力')}")
+  st.write(f"**授業者**: {d_sb.get('teacher', '未入力')}")
+  st.write(f"**単元**: {d_sb.get('unit_title', '未入力')}")
+  st.divider()
+  if st.button("🔄 最初からやり直す"):
+    st.session_state.clear()
+    st.rerun()
 
 col_chat, col_preview = st.columns([1, 1.2])
 
 with col_chat:
-    st.subheader("💬 チャット対話エリア")
-    chat_container = st.container(height=400)
-    with chat_container:
-        for msg in st.session_state.chat_history:
-            with st.chat_message(msg["role"]):
-                st.write(msg["content"])
+  st.subheader("💬 チャット対話エリア")
+  chat_container = st.container(height=400)
+  with chat_container:
+    for msg in st.session_state.chat_history:
+      with st.chat_message(msg["role"]):
+        st.write(msg["content"])
 
-    step = st.session_state.step
+  step = st.session_state.step
 
-    # 「前の項目に戻る」ボタン（最初のステップ以外で表示）
-    if step > 0 or st.session_state.hours_done > 0 or st.session_state.matsumatsu_step > 0:
-        if st.button("⬅️ 前の質問に戻って修正する"):
-            go_back_step()
+  # 「前の項目に戻る」ボタン（最初のステップ以外で表示）
+  if (
+      step > 0
+      or st.session_state.hours_done > 0
+      or st.session_state.matsumatsu_step > 0
+  ):
+    if st.button("⬅️ 前の質問に戻って修正する"):
+      go_back_step()
 
-    # 基本情報入力
-    if step < len(QUESTIONS):
-        q = QUESTIONS[step]
-        # 既存の入力値があればデフォルト値としてセット
-        default_val = st.session_state.data.get(q["key"], "")
-        
-        with st.form(key=f"form_step_{step}", clear_on_submit=True):
-            if q["type"] == "text":
-                val = st.text_input(q["label"], value=str(default_val))
-            elif q["type"] == "textarea":
-                val = st.text_area(q["label"], value=str(default_val))
-            elif q["type"] == "number":
-                num_val = int(default_val) if default_val else 5
-                val = st.number_input(q["label"], min_value=1, max_value=20, value=num_val)
-            
-            submitted = st.form_submit_button("回答を送信")
-            if submitted and val:
-                st.session_state.data[q["key"]] = val
-                st.session_state.chat_history.append({"role": "user", "content": str(val)})
-                st.session_state.step += 1
-                
-                if st.session_state.step < len(QUESTIONS):
-                    next_q = QUESTIONS[st.session_state.step]
-                    st.session_state.chat_history.append({"role": "assistant", "content": next_q["prompt"]})
-                else:
-                    total = int(st.session_state.data["total_hours"])
-                    st.session_state.chat_history.append({
-                        "role": "assistant", 
-                        "content": f"ありがとうございます！次に第1時～第{total}時までの【各時間の目標】と【身に付ける主となる思考スキル】を入力します。\nまず「第1時」の内容を入力してください。"
-                    })
-                st.rerun()
+  # 基本情報入力
+  if step < len(QUESTIONS):
+    q = QUESTIONS[step]
+    # 既存の入力値があればデフォルト値としてセット
+    default_val = st.session_state.data.get(q["key"], "")
 
-    # 単元計画入力
-    elif step == len(QUESTIONS):
-        total_hours = int(st.session_state.data["total_hours"])
-        curr_h = st.session_state.hours_done + 1
-        
-        if curr_h <= total_hours:
-            st.write(f"### ⏰ 第 {curr_h} 時 の入力")
-            with st.form(key=f"form_hour_{curr_h}", clear_on_submit=True):
-                h_goal = st.text_area(f"第 {curr_h} 時 の目標")
-                h_skills = st.multiselect(f"第 {curr_h} 時 に身に付ける主となる思考スキル（複数選択可）", ALL_SKILLS_FLAT)
-                
-                submitted = st.form_submit_button(f"第 {curr_h} 時を登録")
-                if submitted and h_goal:
-                    st.session_state.data["unit_plan"].append({
-                        "hour": curr_h,
-                        "goal": h_goal,
-                        "skills": h_skills
-                    })
-                    st.session_state.hours_done += 1
-                    skills_str = ", ".join(h_skills) if h_skills else "なし"
-                    st.session_state.chat_history.append({"role": "user", "content": f"第{curr_h}時: {h_goal} (思考スキル: {skills_str})"})
-                    
-                    if st.session_state.hours_done < total_hours:
-                        st.session_state.chat_history.append({
-                            "role": "assistant",
-                            "content": f"次に「第{curr_h + 1}時」の目標と思考スキルを入力してください。"
-                        })
-                    else:
-                        st.session_state.step += 1
-                        st.session_state.chat_history.append({
-                            "role": "assistant",
-                            "content": f"全{total_hours}時間分の計画が入力されました！\n次に【本時】が第何時にあたるかの選択と、本時のねらいを入力してください。"
-                        })
-                    st.rerun()
+    with st.form(key=f"form_step_{step}", clear_on_submit=True):
+      if q["type"] == "text":
+        val = st.text_input(q["label"], value=str(default_val))
+      elif q["type"] == "textarea":
+        val = st.text_area(q["label"], value=str(default_val))
+      elif q["type"] == "number":
+        num_val = int(default_val) if default_val else 5
+        val = st.number_input(
+            q["label"], min_value=1, max_value=20, value=num_val
+        )
 
-    # 本時選択
-    elif step == len(QUESTIONS) + 1:
-        total_hours = int(st.session_state.data["total_hours"])
-        with st.form(key="form_honshi", clear_on_submit=True):
-            honshi_num = st.selectbox("本時は第何時ですか？", range(1, total_hours + 1))
-            honshi_aim = st.text_area("本時のねらい", value=st.session_state.data.get("honshi_aim", ""))
-            submitted = st.form_submit_button("本時設定を完了")
-            if submitted and honshi_aim:
-                st.session_state.data["honshi_num"] = honshi_num
-                st.session_state.data["honshi_aim"] = honshi_aim
-                st.session_state.chat_history.append({"role": "user", "content": f"本時: 第{honshi_num}時\nねらい: {honshi_aim}"})
-                st.session_state.step += 1
-                st.session_state.chat_history.append({
-                    "role": "assistant",
-                    "content": "それでは最後に、指導課程（三松メソッド）を入力していきます。\nまずは【① つかむ】の学習内容、手立て、身に付ける思考スキル（複数選択可）、教員が意図する生徒の姿を入力してください。"
-                })
-                st.rerun()
+      submitted = st.form_submit_button("回答を送信")
+      if submitted and val:
+        st.session_state.data[q["key"]] = val
+        st.session_state.chat_history.append(
+            {"role": "user", "content": str(val)}
+        )
+        st.session_state.step += 1
 
-    # 指導課程入力
-    elif step == len(QUESTIONS) + 2:
-        m_step = st.session_state.matsumatsu_step
-        if m_step < len(MATSUMATSU_PHASES):
-            phase = MATSUMATSU_PHASES[m_step]
-            st.write(f"### 📍 指導課程: {phase['title']}")
-            
-            # 既存入力データ
-            existing_p = st.session_state.data.get("matsumatsu", {}).get(phase["key"], {})
-            
-            with st.form(key=f"form_matsumatsu_{m_step}", clear_on_submit=True):
-                content = st.text_area("学習内容", value=existing_p.get("content", ""))
-                tedate = st.text_area("手立て", value=existing_p.get("tedate", ""))
-                skills = st.multiselect("身に付ける思考スキル（複数選択可）", ALL_SKILLS_FLAT, default=existing_p.get("skills", []))
-                target_student = st.text_area("教員が意図する生徒の姿", value=existing_p.get("target_student", ""))
-                
-                submitted = st.form_submit_button(f"{phase['title']} を登録")
-                if submitted:
-                    st.session_state.data["matsumatsu"][phase["key"]] = {
-                        "content": content,
-                        "tedate": tedate,
-                        "skills": skills,
-                        "target_student": target_student
-                    }
-                    st.session_state.matsumatsu_step += 1
-                    skills_str = ", ".join(skills) if skills else "なし"
-                    st.session_state.chat_history.append({
-                        "role": "user",
-                        "content": f"【{phase['title']}】\n学習内容: {content}\n手立て: {tedate}\n思考スキル: {skills_str}\n教員が意図する生徒の姿: {target_student}"
-                    })
-                    
-                    if st.session_state.matsumatsu_step < len(MATSUMATSU_PHASES):
-                        next_p = MATSUMATSU_PHASES[st.session_state.matsumatsu_step]
-                        st.session_state.chat_history.append({
-                            "role": "assistant",
-                            "content": f"次に【{next_p['title']}】を入力してください。"
-                        })
-                    else:
-                        st.session_state.step += 1
-                        st.session_state.chat_history.append({
-                            "role": "assistant",
-                            "content": "🎉 すべての入力が完了しました！右側のシート画面をご確認ください。"
-                        })
-                    st.rerun()
+        if st.session_state.step < len(QUESTIONS):
+          next_q = QUESTIONS[st.session_state.step]
+          st.session_state.chat_history.append(
+              {"role": "assistant", "content": next_q["prompt"]}
+          )
+        else:
+          total = int(st.session_state.data["total_hours"])
+          st.session_state.chat_history.append({
+              "role": "assistant",
+              "content": (
+                  f"ありがとうございます！次に第1時～第{total}時までの【各時間の目標】と【身に付ける主となる思考スキル】を入力します。\nまず「第1時」の内容を入力してください。"
+              ),
+          })
+        st.rerun()
+
+  # 単元計画入力
+  elif step == len(QUESTIONS):
+    total_hours = int(st.session_state.data["total_hours"])
+    curr_h = st.session_state.hours_done + 1
+
+    if curr_h <= total_hours:
+      st.write(f"### ⏰ 第 {curr_h} 時 の入力")
+      with st.form(key=f"form_hour_{curr_h}", clear_on_submit=True):
+        h_goal = st.text_area(f"第 {curr_h} 時 の目標")
+        h_skills = st.multiselect(
+            f"第 {curr_h} 時 に身に付ける主となる思考スキル（複数選択可）",
+            ALL_SKILLS_FLAT,
+        )
+
+        submitted = st.form_submit_button(f"第 {curr_h} 時を登録")
+        if submitted and h_goal:
+          st.session_state.data["unit_plan"].append({
+              "hour": curr_h,
+              "goal": h_goal,
+              "skills": h_skills,
+          })
+          st.session_state.hours_done += 1
+          skills_str = ", ".join(h_skills) if h_skills else "なし"
+          st.session_state.chat_history.append({
+              "role": "user",
+              "content": f"第{curr_h}時: {h_goal} (思考スキル: {skills_str})",
+          })
+
+          if st.session_state.hours_done < total_hours:
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": (
+                    f"次に「第{curr_h + 1}時」の目標と思考スキルを入力してください。"
+                ),
+            })
+          else:
+            st.session_state.step += 1
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": (
+                    f"全{total_hours}時間分の計画が入力されました！\n次に【本時】が第何時にあたるかの選択と、本時のねらいを入力してください。"
+                ),
+            })
+          st.rerun()
+
+  # 本時選択
+  elif step == len(QUESTIONS) + 1:
+    total_hours = int(st.session_state.data["total_hours"])
+    with st.form(key="form_honshi", clear_on_submit=True):
+      honshi_num = st.selectbox(
+          "本時は第何時ですか？", range(1, total_hours + 1)
+      )
+      honshi_aim = st.text_area(
+          "本時のねらい", value=st.session_state.data.get("honshi_aim", "")
+      )
+      submitted = st.form_submit_button("本時設定を完了")
+      if submitted and honshi_aim:
+        st.session_state.data["honshi_num"] = honshi_num
+        st.session_state.data["honshi_aim"] = honshi_aim
+        st.session_state.chat_history.append({
+            "role": "user",
+            "content": f"本時: 第{honshi_num}時\nねらい: {honshi_aim}",
+        })
+        st.session_state.step += 1
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "content": (
+                "それでは最後に、指導課程（三松メソッド）を入力していきます。\nまずは【①"
+                " つかむ】の学習内容、手立て、身に付ける思考スキル（複数選択可）、教員が意図する生徒の姿を入力してください。"
+            ),
+        })
+        st.rerun()
+
+  # 指導課程入力
+  elif step == len(QUESTIONS) + 2:
+    m_step = st.session_state.matsumatsu_step
+    if m_step < len(MATSUMATSU_PHASES):
+      phase = MATSUMATSU_PHASES[m_step]
+      st.write(f"### 📍 指導課程: {phase['title']}")
+
+      # 既存入力データ
+      existing_p = (
+          st.session_state.data.get("matsumatsu", {}).get(phase["key"], {})
+      )
+
+      with st.form(key=f"form_matsumatsu_{m_step}", clear_on_submit=True):
+        content = st.text_area("学習内容", value=existing_p.get("content", ""))
+        tedate = st.text_area("手立て", value=existing_p.get("tedate", ""))
+        skills = st.multiselect(
+            "身に付ける思考スキル（複数選択可）",
+            ALL_SKILLS_FLAT,
+            default=existing_p.get("skills", []),
+        )
+        target_student = st.text_area(
+            "教員が意図する生徒の姿",
+            value=existing_p.get("target_student", ""),
+        )
+
+        submitted = st.form_submit_button(f"{phase['title']} を登録")
+        if submitted:
+          st.session_state.data["matsumatsu"][phase["key"]] = {
+              "content": content,
+              "tedate": tedate,
+              "skills": skills,
+              "target_student": target_student,
+          }
+          st.session_state.matsumatsu_step += 1
+          skills_str = ", ".join(skills) if skills else "なし"
+          st.session_state.chat_history.append({
+              "role": "user",
+              "content": (
+                  f"【{phase['title']}】\n学習内容: {content}\n手立て:"
+                  f" {tedate}\n思考スキル: {skills_str}\n教員が意図する生徒の姿:"
+                  f" {target_student}"
+              ),
+          })
+
+          if st.session_state.matsumatsu_step < len(MATSUMATSU_PHASES):
+            next_p = MATSUMATSU_PHASES[st.session_state.matsumatsu_step]
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": f"次に【{next_p['title']}】を入力してください。",
+            })
+          else:
+            st.session_state.step += 1
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": (
+                    "🎉"
+                    " すべての入力が完了しました！右側のシート画面をご確認ください。"
+                ),
+            })
+          st.rerun()
 
     else:
-        st.success("🎉 すべての入力が完了しました！")
-        if st.button("⬅️ 直前の指導課程の修正に戻る"):
-            st.session_state.step = len(QUESTIONS) + 2
-            st.session_state.matsumatsu_step = 3
-            st.rerun()
+      st.success("🎉 すべての入力が完了しました！")
+      if st.button("⬅️ 直前の指導課程の修正に戻る"):
+        st.session_state.step = len(QUESTIONS) + 2
+        st.session_state.matsumatsu_step = 3
+        st.rerun()
 
 # プレビュー表示エリア
 with col_preview:
-    st.subheader("📄 指導計画シート プレビュー")
+  st.subheader("📄 指導計画シート プレビュー")
+
+  # ★動作軽量化のための切り替えスイッチ★
+  show_preview = st.toggle(
+      "👁️ プレビューを表示する（入力作業中はOFFにすると高速動作します）",
+      value=False,
+  )
+
+  if not show_preview:
+    st.info(
+        "💡 **軽量化モード作動中**\n\n"
+        "同時アクセスによる画面の固定を防ぐため、入力中のプレビュー自動描画を停止しています。\n\n"
+        "入力がすべて完了した後や、シートを確認・印刷・PDF保存したいときだけ、上のスイッチを **ON** にしてください。"
+    )
+  else:
     d = st.session_state.data
     mm_data = d.get("matsumatsu", {})
 
     def get_p(key):
-        return mm_data.get(key, {"content": "", "tedate": "", "skills": [], "target_student": ""})
+      return mm_data.get(
+          key,
+          {"content": "", "tedate": "", "skills": [], "target_student": ""},
+      )
 
     tsukamu = get_p("tsukamu")
     kangaeru = get_p("kangaeru")
@@ -313,11 +459,11 @@ with col_preview:
     matomeru = get_p("matomeru")
 
     def fmt_skills(skills):
-        if not skills:
-            return "( 未設定 )"
-        return " / ".join(skills)
+      if not skills:
+        return "( 未設定 )"
+      return " / ".join(skills)
 
-    preview_html = f'''
+    preview_html = f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -548,26 +694,31 @@ with col_preview:
                 <th style="width:53%;">各時間の目標</th>
                 <th style="width:35%;">身に付ける主となる思考スキル</th>
             </tr>
-    '''
-    
+    """
+
     unit_plans = d.get("unit_plan", [])
     honshi_num = d.get("honshi_num", 0)
     if not unit_plans:
-        preview_html += "<tr><td colspan='3' style='text-align:center; padding:8px; color:#888;'>単元計画は未入力です</td></tr>"
+      preview_html += "<tr><td colspan='3' style='text-align:center;"
+      preview_html += " padding:8px; color:#888;'>単元計画は未入力です</td></tr>"
     else:
-        for hp in unit_plans:
-            is_honshi = "<br><span style='color:red; font-weight:bold;'>★本時</span>" if hp["hour"] == honshi_num else ""
-            skills_str = ", ".join(hp["skills"]) if hp["skills"] else "-"
-            bg_color = "#fff3cd" if hp["hour"] == honshi_num else "#ffffff"
-            preview_html += f'''
+      for hp in unit_plans:
+        is_honshi = (
+            "<br><span style='color:red; font-weight:bold;'>★本時</span>"
+            if hp["hour"] == honshi_num
+            else ""
+        )
+        skills_str = ", ".join(hp["skills"]) if hp["skills"] else "-"
+        bg_color = "#fff3cd" if hp["hour"] == honshi_num else "#ffffff"
+        preview_html += f"""
             <tr style="background-color: {bg_color};">
                 <td style="text-align:center;">第{hp['hour']}時{is_honshi}</td>
                 <td>{safe_html(hp['goal'])}</td>
                 <td><span style="background:#004085; color:#fff; padding:1px 4px; border-radius:3px; font-size:7.5pt;">{safe_html(skills_str)}</span></td>
             </tr>
-            '''
-            
-    preview_html += f'''
+            """
+
+    preview_html += f"""
         </table>
         <table class="tbl" style="margin-top:4px;">
             <tr>
@@ -577,16 +728,16 @@ with col_preview:
         </table>
 
         <div style="font-weight:bold; margin: 6px 0 3px 0; background:#eee; padding:2px 5px;">■ 指導課程（概要）</div>
-    '''
+    """
     for p in MATSUMATSU_PHASES:
-        k = p["key"]
-        p_info = mm_data.get(k, {})
-        c_val = safe_html(p_info.get("content", ""))
-        t_val = safe_html(p_info.get("tedate", ""))
-        target = safe_html(p_info.get("target_student", ""))
-        skills = p_info.get("skills", [])
-        s_str = safe_html(", ".join(skills)) if skills else "なし"
-        preview_html += f'''
+      k = p["key"]
+      p_info = mm_data.get(k, {})
+      c_val = safe_html(p_info.get("content", ""))
+      t_val = safe_html(p_info.get("tedate", ""))
+      target = safe_html(p_info.get("target_student", ""))
+      skills = p_info.get("skills", [])
+      s_str = safe_html(", ".join(skills)) if skills else "なし"
+      preview_html += f"""
         <div style="border: 1px solid #333; margin-bottom: 4px; padding: 3px; background-color: #fafafa;">
             <div style="font-weight:bold; background-color: #d9edf7; padding: 1px 4px; border-bottom: 1px solid #333; margin: -3px -3px 3px -3px; font-size:8.5pt;">{p['title']}</div>
             <table style="width:100%; border:none; border-collapse:collapse; font-size:8pt;">
@@ -602,9 +753,9 @@ with col_preview:
                 </tr>
             </table>
         </div>
-        '''
+        """
 
-    preview_html += f'''
+    preview_html += f"""
     </div>
 
     <!-- 2ページ目 -->
@@ -647,7 +798,7 @@ with col_preview:
                             <div class="skill-badge">💡 思考スキル: {safe_html(fmt_skills(kangaeru['skills']))}</div>
                         </div>
                         <div class="phase-card-right">
-                            <b>教員が意図する生徒の姿:</b><br>
+                            <b>教員特征とする生徒の姿:</b><br>
                             {safe_html(kangaeru['target_student'])}
                         </div>
                     </div>
@@ -699,5 +850,5 @@ with col_preview:
 
     </body>
     </html>
-    '''
+    """
     st.components.v1.html(preview_html, height=2200, scrolling=True)
