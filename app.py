@@ -56,6 +56,46 @@ def safe_html(text):
     escaped = html.escape(str(text))
     return escaped.replace("\n", "<br>")
 
+# 1つ前の項目に戻る関数
+def go_back_step():
+    step = st.session_state.step
+    if step == 0:
+        return # 最初のステップなら戻れない
+    
+    # 指導課程（①〜④）の途中から戻る場合
+    if step == len(QUESTIONS) + 2:
+        if st.session_state.matsumatsu_step > 0:
+            st.session_state.matsumatsu_step -= 1
+        else:
+            st.session_state.step -= 1
+            
+    # 本時選択から単元計画へ戻る場合
+    elif step == len(QUESTIONS) + 1:
+        st.session_state.step -= 1
+        st.session_state.hours_done = len(st.session_state.data.get("unit_plan", [])) - 1
+        if st.session_state.data.get("unit_plan"):
+            st.session_state.data["unit_plan"].pop()
+
+    # 単元計画の途中で戻る場合
+    elif step == len(QUESTIONS):
+        if st.session_state.hours_done > 0:
+            st.session_state.hours_done -= 1
+            if st.session_state.data.get("unit_plan"):
+                st.session_state.data["unit_plan"].pop()
+        else:
+            st.session_state.step -= 1
+
+    # 基本情報（質問0〜7）の中で戻る場合
+    else:
+        st.session_state.step -= 1
+
+    # チャット履歴を2つ分削除（ユーザーの回答 と アシスタントの次の質問）
+    if len(st.session_state.chat_history) >= 2:
+        st.session_state.chat_history.pop()
+        st.session_state.chat_history.pop()
+
+    st.rerun()
+
 st.title("📝 授業計画シート作成アプリ（三松メソッド対応）")
 st.caption("対話形式で質問に答えるだけで、初めての人でも分かりやすい指導計画シートを生成します。")
 
@@ -108,24 +148,33 @@ col_chat, col_preview = st.columns([1, 1.2])
 
 with col_chat:
     st.subheader("💬 チャット対話エリア")
-    chat_container = st.container(height=450)
+    chat_container = st.container(height=400)
     with chat_container:
         for msg in st.session_state.chat_history:
             with st.chat_message(msg["role"]):
                 st.write(msg["content"])
 
     step = st.session_state.step
-    
+
+    # 「前の項目に戻る」ボタン（最初のステップ以外で表示）
+    if step > 0 or st.session_state.hours_done > 0 or st.session_state.matsumatsu_step > 0:
+        if st.button("⬅️ 前の質問に戻って修正する"):
+            go_back_step()
+
     # 基本情報入力
     if step < len(QUESTIONS):
         q = QUESTIONS[step]
+        # 既存の入力値があればデフォルト値としてセット
+        default_val = st.session_state.data.get(q["key"], "")
+        
         with st.form(key=f"form_step_{step}", clear_on_submit=True):
             if q["type"] == "text":
-                val = st.text_input(q["label"])
+                val = st.text_input(q["label"], value=str(default_val))
             elif q["type"] == "textarea":
-                val = st.text_area(q["label"])
+                val = st.text_area(q["label"], value=str(default_val))
             elif q["type"] == "number":
-                val = st.number_input(q["label"], min_value=1, max_value=20, value=5)
+                num_val = int(default_val) if default_val else 5
+                val = st.number_input(q["label"], min_value=1, max_value=20, value=num_val)
             
             submitted = st.form_submit_button("回答を送信")
             if submitted and val:
@@ -184,7 +233,7 @@ with col_chat:
         total_hours = int(st.session_state.data["total_hours"])
         with st.form(key="form_honshi", clear_on_submit=True):
             honshi_num = st.selectbox("本時は第何時ですか？", range(1, total_hours + 1))
-            honshi_aim = st.text_area("本時のねらい")
+            honshi_aim = st.text_area("本時のねらい", value=st.session_state.data.get("honshi_aim", ""))
             submitted = st.form_submit_button("本時設定を完了")
             if submitted and honshi_aim:
                 st.session_state.data["honshi_num"] = honshi_num
@@ -203,11 +252,15 @@ with col_chat:
         if m_step < len(MATSUMATSU_PHASES):
             phase = MATSUMATSU_PHASES[m_step]
             st.write(f"### 📍 指導課程: {phase['title']}")
+            
+            # 既存入力データ
+            existing_p = st.session_state.data.get("matsumatsu", {}).get(phase["key"], {})
+            
             with st.form(key=f"form_matsumatsu_{m_step}", clear_on_submit=True):
-                content = st.text_area("学習内容")
-                tedate = st.text_area("手立て")
-                skills = st.multiselect("身に付ける思考スキル（複数選択可）", ALL_SKILLS_FLAT)
-                target_student = st.text_area("教員が意図する生徒の姿")
+                content = st.text_area("学習内容", value=existing_p.get("content", ""))
+                tedate = st.text_area("手立て", value=existing_p.get("tedate", ""))
+                skills = st.multiselect("身に付ける思考スキル（複数選択可）", ALL_SKILLS_FLAT, default=existing_p.get("skills", []))
+                target_student = st.text_area("教員が意図する生徒の姿", value=existing_p.get("target_student", ""))
                 
                 submitted = st.form_submit_button(f"{phase['title']} を登録")
                 if submitted:
@@ -240,7 +293,10 @@ with col_chat:
 
     else:
         st.success("🎉 すべての入力が完了しました！")
-        st.info("右側のプレビュー画面で確認し、印刷またはPDF保存してご利用ください。")
+        if st.button("⬅️ 直前の指導課程の修正に戻る"):
+            st.session_state.step = len(QUESTIONS) + 2
+            st.session_state.matsumatsu_step = 3
+            st.rerun()
 
 # プレビュー表示エリア
 with col_preview:
@@ -279,13 +335,13 @@ with col_preview:
                 margin: 0 !important; 
                 padding: 0 !important;
                 page-break-after: always; 
-                height: 275mm; /* A4の印刷領域に合わせる */
+                height: 275mm;
                 overflow: hidden;
             }}
         }}
         * {{
             box-sizing: border-box;
-            word-break: break-word; /* 長文の崩れ防止 */
+            word-break: break-word;
         }}
         body {{
             font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
@@ -308,7 +364,6 @@ with col_preview:
         }}
         .print-btn:hover {{ background-color: #01579b; }}
         
-        /* A4サイズに最適化したページコンテナ */
         .page {{
             background-color: #ffffff;
             padding: 15px;
@@ -343,7 +398,6 @@ with col_preview:
             text-align: center;
         }}
 
-        /* 2ページ目（構造図解：相対配置で縦崩れを防ぐ柔軟レイアウト） */
         .diagram-wrapper {{
             display: flex;
             position: relative;
@@ -352,7 +406,6 @@ with col_preview:
             margin-top: 5px;
         }}
 
-        /* 左側：「つなagu」の垂直循環ライン */
         .tsunagu-sidebar {{
             width: 45px;
             display: flex;
@@ -387,7 +440,6 @@ with col_preview:
             padding: 8px 2px;
         }}
 
-        /* 右側：ステップの流れ */
         .flow-container {{
             flex: 1;
             display: flex;
@@ -411,19 +463,18 @@ with col_preview:
             color: #006064;
         }}
         
-        /* カード内部の左右カラム固定・自動折り返し指定 */
         .phase-card-body {{
             display: flex;
             gap: 10px;
         }}
         .phase-card-left {{
             flex: 1.3;
-            min-width: 0; /* カラムのはみ出し・ズレを防止 */
+            min-width: 0;
             font-size: 8pt;
         }}
         .phase-card-right {{
             flex: 1;
-            min-width: 0; /* カラムのはみ出し・ズレを防止 */
+            min-width: 0;
             background-color: #1a5276;
             color: #fff;
             padding: 6px 8px;
@@ -443,7 +494,6 @@ with col_preview:
             margin-top: 4px;
         }}
 
-        /* 各ステップ間の矢印 */
         .down-arrow-icon {{
             text-align: center;
             color: #0288d1;
@@ -457,7 +507,7 @@ with col_preview:
 
     <button class="print-btn no-print" onclick="window.print()">🖨️ このシートを印刷 / PDF保存</button>
 
-    <!-- 1ページ目：基本情報・単元計画・指導課程（表形式） -->
+    <!-- 1ページ目 -->
     <div class="page">
         <div class="page-title">
             目指す生徒の姿を組み込んだ授業計画シート 【研究主題】 すべての生徒がいきいきと輝く授業を具現化するための集団づくりと授業改善
@@ -557,18 +607,16 @@ with col_preview:
     preview_html += f'''
     </div>
 
-    <!-- 2ページ目：指導課程（三松メソッド・構造図解） -->
+    <!-- 2ページ目 -->
     <div class="page">
         <div class="page-title">■ 指導課程（三松メソッド・構造図解）</div>
         
         <div class="diagram-wrapper">
-            <!-- ループ（つなぐ）左サイドライン -->
             <div class="tsunagu-sidebar">
                 <div class="tsunagu-arrow-tip"></div>
                 <div class="tsunagu-text">つなぐ</div>
             </div>
 
-            <!-- 右側 4フェーズの縦フロー -->
             <div class="flow-container">
                 
                 <!-- ① つかむ -->
