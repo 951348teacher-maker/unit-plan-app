@@ -27,7 +27,7 @@
     .summary-box { background: #f8f9fa; border: 1px solid #eee; padding: 10px; border-radius: 4px; font-size: 0.8rem; }
 
     /* チャット・入力エリア */
-    .chat-area { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #ddd; background: #fff; min-width: 320px; max-width: 480px; }
+    .chat-area { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #ddd; background: #fff; min-width: 320px; max-width: 450px; }
     .chat-history { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #fafafa; }
     .message { max-width: 85%; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; line-height: 1.4; white-space: pre-wrap; }
     .message.assistant { background: #e3f2fd; align-self: flex-start; border-bottom-left-radius: 2px; color: #0d47a1; }
@@ -45,25 +45,45 @@
     .preview-toolbar { padding: 10px 15px; background: #fff; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
     .preview-body { flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
-    /* 印刷スタイル・A4 */
-    .page { background: #fff; width: 210mm; min-height: 297mm; padding: 15mm; border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; font-size: 8.5pt; line-height: 1.3; box-sizing: border-box; }
-    .page-title { text-align: center; font-weight: bold; font-size: 10.5pt; background: #e6f0fa; padding: 5px; border: 1px solid #333; margin-bottom: 10px; }
-    table.tbl { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-    table.tbl th, table.tbl td { border: 1px solid #333; padding: 4px 6px; }
+    /* 印刷スタイル・A4基本 */
+    .page { background: #fff; width: 210mm; min-height: 297mm; padding: 10mm; border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; font-size: 8.5pt; line-height: 1.25; box-sizing: border-box; }
+    .page-title { text-align: center; font-weight: bold; font-size: 10pt; background: #e6f0fa; padding: 4px; border: 1px solid #333; margin-bottom: 8px; }
+    table.tbl { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+    table.tbl th, table.tbl td { border: 1px solid #333; padding: 3px 5px; word-wrap: break-word; }
     table.tbl th { background-color: #f2f2f2; text-align: center; }
     
+    /* 文字サイズ調整（コンパクトモード） */
+    .page.compact { font-size: 7.5pt; line-height: 1.15; padding: 8mm; }
+    .page.compact table.tbl th, .page.compact table.tbl td { padding: 2px 4px; }
+    .page.compact .page-title { font-size: 9pt; padding: 3px; margin-bottom: 6px; }
+    .page.compact .tsunagu-text { font-size: 11pt; }
+    .page.compact .phase-card { padding: 6px 8px; }
+
+    /* 文字サイズ調整（極小モード） */
+    .page.xcompact { font-size: 6.8pt; line-height: 1.1; padding: 6mm; }
+    .page.xcompact table.tbl th, .page.xcompact table.tbl td { padding: 1px 3px; }
+    .page.xcompact .page-title { font-size: 8.5pt; padding: 2px; margin-bottom: 4px; }
+    .page.xcompact .tsunagu-text { font-size: 10pt; }
+    .page.xcompact .phase-card { padding: 4px 6px; }
+
+    /* 構造図スタイル */
     .diagram-wrapper { display: flex; position: relative; width: 100%; gap: 10px; margin-top: 5px; }
-    .tsunagu-sidebar { width: 45px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 18px solid #0288d1; border-top: 18px solid #0288d1; border-bottom: 18px solid #0288d1; border-top-left-radius: 25px; border-bottom-left-radius: 25px; position: relative; margin-left: 5px; }
-    .tsunagu-arrow-tip { position: absolute; top: -18px; right: -25px; width: 0; height: 0; border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-left: 20px solid #0288d1; }
-    .tsunagu-text { font-size: 13pt; font-weight: bold; color: #0288d1; writing-mode: vertical-rl; letter-spacing: 4px; background: #fff; padding: 8px 2px; }
-    .flow-container { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-    .phase-card { border: 2px solid #00bcd4; background-color: #e0f7fa; border-radius: 8px; padding: 8px 10px; }
-    .phase-card-title { font-size: 10.5pt; font-weight: bold; text-decoration: underline; text-align: center; margin-bottom: 4px; color: #006064; }
-    .phase-card-body { display: flex; gap: 10px; }
-    .phase-card-left { flex: 1.3; font-size: 8pt; }
-    .phase-card-right { flex: 1; background-color: #1a5276; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 8pt; }
-    .skill-badge { display: inline-block; background-color: #fff; border: 1.5px solid #ff9800; color: #333; font-weight: bold; padding: 1px 5px; border-radius: 4px; font-size: 7.5pt; margin-top: 4px; }
-    .down-arrow-icon { text-align: center; color: #0288d1; font-size: 14pt; line-height: 1; margin: -2px 0; }
+    .tsunagu-sidebar { width: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 15px solid #0288d1; border-top: 15px solid #0288d1; border-bottom: 15px solid #0288d1; border-top-left-radius: 20px; border-bottom-left-radius: 20px; position: relative; margin-left: 5px; }
+    .tsunagu-arrow-tip { position: absolute; top: -15px; right: -22px; width: 0; height: 0; border-top: 12px solid transparent; border-bottom: 12px solid transparent; border-left: 18px solid #0288d1; }
+    .tsunagu-text { font-size: 12pt; font-weight: bold; color: #0288d1; writing-mode: vertical-rl; letter-spacing: 3px; background: #fff; padding: 6px 2px; }
+    .flow-container { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+    .phase-card { border: 2px solid #00bcd4; background-color: #e0f7fa; border-radius: 6px; padding: 6px 8px; }
+    .phase-card-title { font-size: 9.5pt; font-weight: bold; text-decoration: underline; text-align: center; margin-bottom: 3px; color: #006064; }
+    .phase-card-body { display: flex; gap: 8px; }
+    .phase-card-left { flex: 1.3; font-size: 0.95em; }
+    .phase-card-right { flex: 1; background-color: #1a5276; color: #fff; padding: 5px 7px; border-radius: 5px; font-size: 0.9em; }
+    .skill-badge { display: inline-block; background-color: #fff; border: 1px solid #ff9800; color: #333; font-weight: bold; padding: 1px 4px; border-radius: 3px; font-size: 0.88em; margin-top: 3px; }
+    .down-arrow-icon { text-align: center; color: #0288d1; font-size: 12pt; line-height: 1; margin: -2px 0; }
+
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
 
     @media print {
       body { background: white; height: auto; overflow: visible; }
@@ -71,7 +91,7 @@
       .main-container { display: block; }
       .preview-area { background: white; overflow: visible; }
       .preview-body { padding: 0; }
-      .page { border: none; box-shadow: none; margin: 0; page-break-after: always; width: 100%; height: auto; }
+      .page { border: none; box-shadow: none; margin: 0; page-break-after: always; break-after: page; width: 210mm; min-height: 297mm; max-height: 297mm; box-sizing: border-box; }
     }
   </style>
 </head>
@@ -118,7 +138,14 @@
   <!-- プレビューエリア -->
   <div class="preview-area">
     <div class="preview-toolbar">
-      <span>📄 印刷プレビュー（リアルタイム更新）</span>
+      <div>
+        <span>📄 印刷プレビュー </span>
+        <select id="font-size-select" onchange="changeFontSize(this.value)" style="margin-left: 10px; padding: 4px 8px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
+          <option value="normal">文字サイズ：標準</option>
+          <option value="compact">文字サイズ：小さめ（文章・コマ数多め）</option>
+          <option value="xcompact">文字サイズ：極小（大量入力時）</option>
+        </select>
+      </div>
       <button class="btn" style="width:auto; padding:6px 16px;" onclick="window.print()">🖨️ 印刷 / PDF保存</button>
     </div>
     <div class="preview-body" id="preview-body"></div>
@@ -155,7 +182,8 @@ let appState = {
   data: { unit_plan: [], matsumatsu: {} },
   chat_history: [{ role: "assistant", content: "こんにちは！授業計画シート作成ボットです。質問に順番に答えていくと、三松メソッドに沿った授業計画シートが完成します。\n\nまずは【教科名】を入力してください。" }],
   hours_done: 0,
-  matsumatsu_step: 0
+  matsumatsu_step: 0,
+  fontSize: "normal"
 };
 
 function init() { render(); }
@@ -163,6 +191,11 @@ function init() { render(); }
 function safeHtml(text) {
   if (!text) return "";
   return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+}
+
+function changeFontSize(val) {
+  appState.fontSize = val;
+  renderPreview();
 }
 
 function render() {
@@ -198,7 +231,6 @@ function renderForm() {
 
   const step = appState.step;
 
-  // 基本質問 (0〜7)
   if (step < QUESTIONS.length) {
     const q = QUESTIONS[step];
     const val = appState.data[q.key] || "";
@@ -219,7 +251,6 @@ function renderForm() {
       <button class="btn" onclick="submitBasicQ()">回答を送信</button>
     `;
   }
-  // 単元計画入力
   else if (step === QUESTIONS.length) {
     const total = parseInt(appState.data.total_hours) || 1;
     const curr = appState.hours_done + 1;
@@ -241,7 +272,6 @@ function renderForm() {
       `;
     }
   }
-  // 本時選択
   else if (step === QUESTIONS.length + 1) {
     const total = parseInt(appState.data.total_hours) || 1;
     let opts = "";
@@ -260,7 +290,6 @@ function renderForm() {
       <button class="btn" onclick="submitHonshi()">本時設定を完了</button>
     `;
   }
-  // 指導課程（三松メソッド）
   else if (step === QUESTIONS.length + 2) {
     const mStep = appState.matsumatsu_step;
     if (mStep < MATSUMATSU_PHASES.length) {
@@ -410,6 +439,7 @@ function goBackStep() {
 function renderPreview() {
   const d = appState.data;
   const mm = d.matsumatsu || {};
+  const sizeClass = appState.fontSize === "normal" ? "" : appState.fontSize;
 
   function getP(k) { return mm[k] || { content: "", tedate: "", skills: [], target_student: "" }; }
   const tsukamu = getP("tsukamu");
@@ -421,7 +451,7 @@ function renderPreview() {
 
   let unitRows = "";
   if (!d.unit_plan || d.unit_plan.length === 0) {
-    unitRows = `<tr><td colspan="3" style="text-align:center; padding:8px; color:#888;">単元計画は未入力です</td></tr>`;
+    unitRows = `<tr><td colspan="3" style="text-align:center; padding:6px; color:#888;">単元計画は未入力です</td></tr>`;
   } else {
     d.unit_plan.forEach(hp => {
       const isHonshi = (hp.hour === d.honshi_num) ? `<br><span style="color:red; font-weight:bold;">★本時</span>` : "";
@@ -431,7 +461,7 @@ function renderPreview() {
         <tr style="background-color: ${bg};">
           <td style="text-align:center;">第${hp.hour}時${isHonshi}</td>
           <td>${safeHtml(hp.goal)}</td>
-          <td><span style="background:#004085; color:#fff; padding:1px 4px; border-radius:3px; font-size:7.5pt;">${safeHtml(sStr)}</span></td>
+          <td><span style="background:#004085; color:#fff; padding:1px 4px; border-radius:3px; font-size:0.9em;">${safeHtml(sStr)}</span></td>
         </tr>
       `;
     });
@@ -441,15 +471,15 @@ function renderPreview() {
   MATSUMATSU_PHASES.forEach(p => {
     const pInfo = getP(p.key);
     mmOverviewHtml += `
-      <div style="border: 1px solid #333; margin-bottom: 4px; padding: 3px; background-color: #fafafa;">
-        <div style="font-weight:bold; background-color: #d9edf7; padding: 1px 4px; border-bottom: 1px solid #333; margin: -3px -3px 3px -3px; font-size:8.5pt;">${p.title}</div>
-        <table style="width:100%; border:none; border-collapse:collapse; font-size:8pt;">
+      <div style="border: 1px solid #333; margin-bottom: 3px; padding: 2px; background-color: #fafafa;">
+        <div style="font-weight:bold; background-color: #d9edf7; padding: 1px 3px; border-bottom: 1px solid #333; margin: -2px -2px 2px -2px; font-size:0.95em;">${p.title}</div>
+        <table style="width:100%; border:none; border-collapse:collapse; font-size:0.95em;">
           <tr style="border:none;">
             <td style="border:none; width:50%; vertical-align:top; padding:1px 3px;">
               <b>【学習内容】</b>: ${safeHtml(pInfo.content)}<br>
               <b>【手立て】</b>: ${safeHtml(pInfo.tedate)}
             </td>
-            <td style="border:none; width:50%; vertical-align:top; background-color:#ffffff; border-left:1px dashed #ccc; padding:1px 4px;">
+            <td style="border:none; width:50%; vertical-align:top; background-color:#ffffff; border-left:1px dashed #ccc; padding:1px 3px;">
               <b>【思考スキル】</b>: <span style="color:#004085; font-weight:bold;">${safeHtml(pInfo.skills ? pInfo.skills.join(", ") : "なし")}</span><br>
               <b>【教員が意図する生徒の姿】</b>: ${safeHtml(pInfo.target_student)}
             </td>
@@ -462,25 +492,25 @@ function renderPreview() {
   const previewBody = document.getElementById("preview-body");
   previewBody.innerHTML = `
     <!-- 1ページ目 -->
-    <div class="page">
+    <div class="page ${sizeClass}">
       <div class="page-title">
         目指す生徒の姿を組み込んだ授業計画シート 【研究主題】 すべての生徒がいきいきと輝く授業を具現化するための集団づくりと授業改善
       </div>
       <table class="tbl">
         <tr>
-          <th style="width:15%;">教科</th>
-          <td style="width:35%;">${safeHtml(d.subject)}</td>
-          <th style="width:15%;">授業者</th>
-          <td style="width:35%;">${safeHtml(d.teacher)}</td>
+          <th style="width:14%;">教科</th>
+          <td style="width:36%;">${safeHtml(d.subject)}</td>
+          <th style="width:14%;">授業者</th>
+          <td style="width:36%;">${safeHtml(d.teacher)}</td>
         </tr>
-        <tr><th>単元（題材）名</th><td colspan="3">${safeHtml(d.unit_title)}</td></tr>
-        <tr><th>単元（題材）の目標</th><td colspan="3">${safeHtml(d.unit_goal)}</td></tr>
+        <tr><th>単元名</th><td colspan="3">${safeHtml(d.unit_title)}</td></tr>
+        <tr><th>単元の目標</th><td colspan="3">${safeHtml(d.unit_goal)}</td></tr>
         <tr><th>生徒の実態</th><td colspan="3">${safeHtml(d.student_status)}</td></tr>
         <tr><th>指導上の工夫</th><td colspan="3">${safeHtml(d.teaching_ideas)}</td></tr>
         <tr><th>教科の見方・考え方</th><td colspan="3">${safeHtml(d.viewpoint)}</td></tr>
       </table>
 
-      <div style="font-weight:bold; margin: 6px 0 3px 0; background:#eee; padding:2px 5px;">■ 単元計画</div>
+      <div style="font-weight:bold; margin: 4px 0 2px 0; background:#eee; padding:1px 4px;">■ 単元計画</div>
       <table class="tbl">
         <tr>
           <th style="width:12%;">時間</th>
@@ -489,19 +519,19 @@ function renderPreview() {
         </tr>
         ${unitRows}
       </table>
-      <table class="tbl" style="margin-top:4px;">
+      <table class="tbl" style="margin-top:2px;">
         <tr>
           <th style="width:20%;">本時のねらい</th>
           <td>${safeHtml(d.honshi_aim)}</td>
         </tr>
       </table>
 
-      <div style="font-weight:bold; margin: 6px 0 3px 0; background:#eee; padding:2px 5px;">■ 指導課程（概要）</div>
+      <div style="font-weight:bold; margin: 4px 0 2px 0; background:#eee; padding:1px 4px;">■ 指導課程（概要）</div>
       ${mmOverviewHtml}
     </div>
 
     <!-- 2ページ目 -->
-    <div class="page">
+    <div class="page ${sizeClass}">
       <div class="page-title">■ 指導課程（三松メソッド・構造図解）</div>
       <div class="diagram-wrapper">
         <div class="tsunagu-sidebar">
@@ -546,7 +576,7 @@ function renderPreview() {
               <div class="phase-card-left">
                 <b>学習内容:</b> ${safeHtml(manabi.content)}<br>
                 <b>手立て:</b> ${safeHtml(manabi.tedate)}<br>
-                <div class="skill-badge">💡 思考スキル: {safeHtml(fmtS(manabi.skills))}</div>
+                <div class="skill-badge">💡 思考スキル: ${safeHtml(fmtS(manabi.skills))}</div>
               </div>
               <div class="phase-card-right">
                 <b>教員が意図する生徒の姿:</b><br>${safeHtml(manabi.target_student)}
@@ -570,11 +600,14 @@ function renderPreview() {
           </div>
         </div>
       </div>
-      <div style="font-size: 7.5pt; margin-top: 8px; color: #555;">
+      <div style="font-size: 0.8em; margin-top: 6px; color: #555;">
         ※ 各教科の見方・考え方は学習指導要領の解説 教科の目標を参考にする
       </div>
     </div>
   `;
+
+  // セレクトボックスの選択状態を保持
+  document.getElementById("font-size-select").value = appState.fontSize;
 }
 
 function saveJSON() {
@@ -595,6 +628,7 @@ function loadJSON(event) {
     try {
       const loaded = JSON.parse(e.target.result);
       appState = loaded;
+      if (!appState.fontSize) appState.fontSize = "normal";
       render();
       alert("作業データを正常に読み込みました！続きから再開できます。");
     } catch(err) {
@@ -611,7 +645,8 @@ function resetApp() {
       data: { unit_plan: [], matsumatsu: {} },
       chat_history: [{ role: "assistant", content: "こんにちは！授業計画シート作成ボットです。質問に順番に答えていくと、三松メソッドに沿った授業計画シートが完成します。\n\nまずは【教科名】を入力してください。" }],
       hours_done: 0,
-      matsumatsu_step: 0
+      matsumatsu_step: 0,
+      fontSize: "normal"
     };
     render();
   }
