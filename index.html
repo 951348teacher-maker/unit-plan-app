@@ -6,16 +6,16 @@
   <title>授業計画シート作成アプリ（三松メソッド対応）</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f4f6f8; color: #333; height: 100vh; display: flex; flex-direction: column; }
-    header { background: #0288d1; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    header h1 { font-size: 1.2rem; }
-    header p { font-size: 0.8rem; opacity: 0.9; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f4f6f8; color: #333; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    header { background: #0288d1; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
+    header h1 { font-size: 1.1rem; }
+    header p { font-size: 0.75rem; opacity: 0.9; }
 
     .main-container { display: flex; flex: 1; overflow: hidden; }
     
     /* サイドバー */
-    .sidebar { width: 260px; background: #ffffff; border-right: 1px solid #ddd; padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
-    .sidebar h2 { font-size: 0.95rem; border-bottom: 2px solid #0288d1; padding-bottom: 5px; color: #0288d1; }
+    .sidebar { width: 250px; background: #ffffff; border-right: 1px solid #ddd; padding: 15px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex-shrink: 0; }
+    .sidebar h2 { font-size: 0.9rem; border-bottom: 2px solid #0288d1; padding-bottom: 4px; color: #0288d1; }
     .btn { background: #0288d1; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; width: 100%; text-align: center; display: inline-block; text-decoration: none; }
     .btn:hover { background: #01579b; }
     .btn-danger { background: #d32f2f; }
@@ -24,25 +24,26 @@
     .btn-secondary:hover { background: #444; }
     .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
     .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-    .summary-box { background: #f8f9fa; border: 1px solid #eee; padding: 10px; border-radius: 4px; font-size: 0.8rem; }
+    .summary-box { background: #f8f9fa; border: 1px solid #eee; padding: 8px; border-radius: 4px; font-size: 0.8rem; }
 
     /* チャット・入力エリア */
-    .chat-area { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #ddd; background: #fff; min-width: 320px; max-width: 450px; }
-    .chat-history { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #fafafa; }
-    .message { max-width: 85%; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; line-height: 1.4; white-space: pre-wrap; }
+    .chat-area { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #ddd; background: #fff; min-width: 300px; max-width: 420px; height: 100%; }
+    .chat-history { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #fafafa; min-height: 100px; }
+    .message { max-width: 90%; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; line-height: 1.4; white-space: pre-wrap; }
     .message.assistant { background: #e3f2fd; align-self: flex-start; border-bottom-left-radius: 2px; color: #0d47a1; }
     .message.user { background: #0288d1; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
     
-    .input-form-container { padding: 15px; border-top: 1px solid #eee; background: #fff; }
-    .form-group { margin-bottom: 10px; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
-    .form-control { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
-    textarea.form-control { resize: vertical; min-height: 70px; }
-    .skills-select { height: 120px; }
+    /* 入力フォーム枠（スクロール対応＆はみ出し防止） */
+    .input-form-container { padding: 12px; border-top: 2px solid #0288d1; background: #fff; max-height: 60vh; overflow-y: auto; flex-shrink: 0; }
+    .form-group { margin-bottom: 8px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: bold; margin-bottom: 3px; color: #333; }
+    .form-control { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; }
+    textarea.form-control { resize: vertical; min-height: 45px; height: 50px; }
+    .skills-select { height: 80px; }
 
     /* プレビューエリア */
     .preview-area { flex: 1.2; display: flex; flex-direction: column; background: #eef2f5; overflow: hidden; }
-    .preview-toolbar { padding: 10px 15px; background: #fff; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+    .preview-toolbar { padding: 8px 15px; background: #fff; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
     .preview-body { flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
     /* 印刷スタイル・A4基本 */
@@ -128,7 +129,7 @@
   <div class="chat-area">
     <div class="chat-history" id="chat-history"></div>
     <div class="input-form-container">
-      <div id="btn-back-container" style="margin-bottom:10px; display:none;">
+      <div id="btn-back-container" style="margin-bottom:8px; display:none;">
         <button class="btn btn-secondary" onclick="goBackStep()">⬅️ 前の質問に戻って修正する</button>
       </div>
       <div id="form-content"></div>
@@ -297,8 +298,8 @@ function renderForm() {
       const existing = (appState.data.matsumatsu && appState.data.matsumatsu[phase.key]) || {};
 
       formDiv.innerHTML = `
-        <h3>📍 指導課程: ${phase.title}</h3>
-        <div class="form-group" style="margin-top:8px;">
+        <h3 style="font-size:0.95rem; color:#0288d1; margin-bottom:6px;">📍 指導課程: ${phase.title}</h3>
+        <div class="form-group">
           <label>学習内容</label>
           <textarea id="mm_content" class="form-control">${existing.content || ""}</textarea>
         </div>
@@ -307,7 +308,7 @@ function renderForm() {
           <textarea id="mm_tedate" class="form-control">${existing.tedate || ""}</textarea>
         </div>
         <div class="form-group">
-          <label>身に付ける思考スキル（Ctrlキーで複数選択）</label>
+          <label>身に付ける思考スキル（複数選択可）</label>
           <select id="mm_skills" class="form-control skills-select" multiple>
             ${THINKING_SKILLS.map(s => {
               const selected = (existing.skills || []).includes(s) ? "selected" : "";
@@ -319,7 +320,7 @@ function renderForm() {
           <label>教員が意図する生徒の姿</label>
           <textarea id="mm_target" class="form-control">${existing.target_student || ""}</textarea>
         </div>
-        <button class="btn" onclick="submitMatsumatsu('${phase.key}', '${phase.title}')">${phase.title} を登録</button>
+        <button class="btn" style="margin-top:6px;" onclick="submitMatsumatsu('${phase.key}', '${phase.title}')">${phase.title} を登録</button>
       `;
     } else {
       formDiv.innerHTML = `<p style="color:green; font-weight:bold;">🎉 すべての入力が完了しました！</p>`;
