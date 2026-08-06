@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>授業計画シート作成アプリ（三松メソッド対応）</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f4f6f8; color: #333; height: 100vh; display: flex; flex-direction: column; }
+    header { background: #0288d1; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    header h1 { font-size: 1.2rem; }
+    header p { font-size: 0.8rem; opacity: 0.9; }
+
+    .main-container { display: flex; flex: 1; overflow: hidden; }
+    
+    /* サイドバー */
+    .sidebar { width: 260px; background: #ffffff; border-right: 1px solid #ddd; padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+    .sidebar h2 { font-size: 0.95rem; border-bottom: 2px solid #0288d1; padding-bottom: 5px; color: #0288d1; }
+    .btn { background: #0288d1; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; width: 100%; text-align: center; display: inline-block; text-decoration: none; }
+    .btn:hover { background: #01579b; }
+    .btn-danger { background: #d32f2f; }
+    .btn-danger:hover { background: #b71c1c; }
+    .btn-secondary { background: #666; }
+    .btn-secondary:hover { background: #444; }
+    .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+    .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .summary-box { background: #f8f9fa; border: 1px solid #eee; padding: 10px; border-radius: 4px; font-size: 0.8rem; }
+
+    /* チャット・入力エリア */
+    .chat-area { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #ddd; background: #fff; min-width: 320px; max-width: 480px; }
+    .chat-history { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #fafafa; }
+    .message { max-width: 85%; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; line-height: 1.4; white-space: pre-wrap; }
+    .message.assistant { background: #e3f2fd; align-self: flex-start; border-bottom-left-radius: 2px; color: #0d47a1; }
+    .message.user { background: #0288d1; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+    
+    .input-form-container { padding: 15px; border-top: 1px solid #eee; background: #fff; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
+    .form-control { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
+    textarea.form-control { resize: vertical; min-height: 70px; }
+    .skills-select { height: 120px; }
+
+    /* プレビューエリア */
+    .preview-area { flex: 1.2; display: flex; flex-direction: column; background: #eef2f5; overflow: hidden; }
+    .preview-toolbar { padding: 10px 15px; background: #fff; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+    .preview-body { flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+
+    /* 印刷スタイル・A4 */
+    .page { background: #fff; width: 210mm; min-height: 297mm; padding: 15mm; border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; font-size: 8.5pt; line-height: 1.3; box-sizing: border-box; }
+    .page-title { text-align: center; font-weight: bold; font-size: 10.5pt; background: #e6f0fa; padding: 5px; border: 1px solid #333; margin-bottom: 10px; }
+    table.tbl { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    table.tbl th, table.tbl td { border: 1px solid #333; padding: 4px 6px; }
+    table.tbl th { background-color: #f2f2f2; text-align: center; }
+    
+    .diagram-wrapper { display: flex; position: relative; width: 100%; gap: 10px; margin-top: 5px; }
+    .tsunagu-sidebar { width: 45px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 18px solid #0288d1; border-top: 18px solid #0288d1; border-bottom: 18px solid #0288d1; border-top-left-radius: 25px; border-bottom-left-radius: 25px; position: relative; margin-left: 5px; }
+    .tsunagu-arrow-tip { position: absolute; top: -18px; right: -25px; width: 0; height: 0; border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-left: 20px solid #0288d1; }
+    .tsunagu-text { font-size: 13pt; font-weight: bold; color: #0288d1; writing-mode: vertical-rl; letter-spacing: 4px; background: #fff; padding: 8px 2px; }
+    .flow-container { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .phase-card { border: 2px solid #00bcd4; background-color: #e0f7fa; border-radius: 8px; padding: 8px 10px; }
+    .phase-card-title { font-size: 10.5pt; font-weight: bold; text-decoration: underline; text-align: center; margin-bottom: 4px; color: #006064; }
+    .phase-card-body { display: flex; gap: 10px; }
+    .phase-card-left { flex: 1.3; font-size: 8pt; }
+    .phase-card-right { flex: 1; background-color: #1a5276; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 8pt; }
+    .skill-badge { display: inline-block; background-color: #fff; border: 1.5px solid #ff9800; color: #333; font-weight: bold; padding: 1px 5px; border-radius: 4px; font-size: 7.5pt; margin-top: 4px; }
+    .down-arrow-icon { text-align: center; color: #0288d1; font-size: 14pt; line-height: 1; margin: -2px 0; }
+
+    @media print {
+      body { background: white; height: auto; overflow: visible; }
+      header, .sidebar, .chat-area, .preview-toolbar { display: none !important; }
+      .main-container { display: block; }
+      .preview-area { background: white; overflow: visible; }
+      .preview-body { padding: 0; }
+      .page { border: none; box-shadow: none; margin: 0; page-break-after: always; width: 100%; height: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📝 授業計画シート作成アプリ（三松メソッド対応・完全高速版）</h1>
+    <p>ブラウザ完結型・フリーズゼロ・同時アクセス対応</p>
+  </div>
+</header>
+
+<div class="main-container">
+  <!-- サイドバー -->
+  <div class="sidebar">
+    <h2>💾 データの保存・復元</h2>
+    <button class="btn" onclick="saveJSON()">💾 作業途中のデータを保存(JSON)</button>
+    <div class="file-input-wrapper">
+      <button class="btn btn-secondary">📂 保存データを読み込んで再開</button>
+      <input type="file" accept=".json" onchange="loadJSON(event)">
+    </div>
+
+    <h2>📋 入力中のデータ概要</h2>
+    <div class="summary-box">
+      <p><b>教科:</b> <span id="sum-subject">未入力</span></p>
+      <p><b>授業者:</b> <span id="sum-teacher">未入力</span></p>
+      <p><b>単元:</b> <span id="sum-unit">未入力</span></p>
+    </div>
+
+    <button class="btn btn-danger" onclick="resetApp()">🔄 最初からやり直す</button>
+  </div>
+
+  <!-- チャット・入力エリア -->
+  <div class="chat-area">
+    <div class="chat-history" id="chat-history"></div>
+    <div class="input-form-container">
+      <div id="btn-back-container" style="margin-bottom:10px; display:none;">
+        <button class="btn btn-secondary" onclick="goBackStep()">⬅️ 前の質問に戻って修正する</button>
+      </div>
+      <div id="form-content"></div>
+    </div>
+  </div>
+
+  <!-- プレビューエリア -->
+  <div class="preview-area">
+    <div class="preview-toolbar">
+      <span>📄 印刷プレビュー（リアルタイム更新）</span>
+      <button class="btn" style="width:auto; padding:6px 16px;" onclick="window.print()">🖨️ 印刷 / PDF保存</button>
+    </div>
+    <div class="preview-body" id="preview-body"></div>
+  </div>
+</div>
+
+<script>
+const THINKING_SKILLS = [
+  "多面的にみる", "順序立てる", "分類する", "変化をとらえる", "比較する", "変換する(図・絵など)",
+  "関係づける", "関連づける", "理由づける", "見通す", "構造化する",
+  "抽象化する", "焦点化する", "評価する", "応用する", "推論する", "具体化する", "広げてみる", "要約する"
+];
+
+const QUESTIONS = [
+  { key: "subject", label: "教科名", type: "text", prompt: "まずは【教科名】を入力してください。（例: 国語、数学、社会）" },
+  { key: "teacher", label: "授業者", type: "text", prompt: "【授業者名】を入力してください。（例: 山田 太郎）" },
+  { key: "unit_title", label: "単元（題材）名", type: "text", prompt: "【単元（題材）名】を入力してください。（例: ごんぎつね、1次関数）" },
+  { key: "unit_goal", label: "単元（題材）の目標", type: "textarea", prompt: "【単元（題材）の目標】を入力してください。" },
+  { key: "student_status", label: "生徒の実態", type: "textarea", prompt: "【生徒の実態】を入力してください。" },
+  { key: "teaching_ideas", label: "指導上の工夫", type: "textarea", prompt: "【指導上の工夫】を入力してください。" },
+  { key: "viewpoint", label: "本単元における教科の見方・考え方", type: "textarea", prompt: "【本単元における教科の見方・考え方】を入力してください。" },
+  { key: "total_hours", label: "単元の総時間数", type: "number", prompt: "この単元は何時間設定ですか？（例: 5時間なら 5）" }
+];
+
+const MATSUMATSU_PHASES = [
+  { key: "tsukamu", title: "① つかむ" },
+  { key: "kangaeru", title: "② 考える" },
+  { key: "manabi", title: "③ 学び合う" },
+  { key: "matomeru", title: "④ まとめる・振り返る" }
+];
+
+let appState = {
+  step: 0,
+  data: { unit_plan: [], matsumatsu: {} },
+  chat_history: [{ role: "assistant", content: "こんにちは！授業計画シート作成ボットです。質問に順番に答えていくと、三松メソッドに沿った授業計画シートが完成します。\n\nまずは【教科名】を入力してください。" }],
+  hours_done: 0,
+  matsumatsu_step: 0
+};
+
+function init() { render(); }
+
+function safeHtml(text) {
+  if (!text) return "";
+  return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+}
+
+function render() {
+  renderChat();
+  renderForm();
+  renderSummary();
+  renderPreview();
+}
+
+function renderChat() {
+  const container = document.getElementById("chat-history");
+  container.innerHTML = appState.chat_history.map(msg => 
+    `<div class="message ${msg.role}">${safeHtml(msg.content)}</div>`
+  ).join("");
+  container.scrollTop = container.scrollHeight;
+}
+
+function renderSummary() {
+  document.getElementById("sum-subject").innerText = appState.data.subject || "未入力";
+  document.getElementById("sum-teacher").innerText = appState.data.teacher || "未入力";
+  document.getElementById("sum-unit").innerText = appState.data.unit_title || "未入力";
+}
+
+function renderForm() {
+  const formDiv = document.getElementById("form-content");
+  const backBtn = document.getElementById("btn-back-container");
+  
+  if (appState.step > 0 || appState.hours_done > 0 || appState.matsumatsu_step > 0) {
+    backBtn.style.display = "block";
+  } else {
+    backBtn.style.display = "none";
+  }
+
+  const step = appState.step;
+
+  // 基本質問 (0〜7)
+  if (step < QUESTIONS.length) {
+    const q = QUESTIONS[step];
+    const val = appState.data[q.key] || "";
+    let inputHtml = "";
+    if (q.type === "text") {
+      inputHtml = `<input type="text" id="input_val" class="form-control" value="${val}">`;
+    } else if (q.type === "textarea") {
+      inputHtml = `<textarea id="input_val" class="form-control">${val}</textarea>`;
+    } else if (q.type === "number") {
+      inputHtml = `<input type="number" id="input_val" class="form-control" min="1" max="20" value="${val || 5}">`;
+    }
+
+    formDiv.innerHTML = `
+      <div class="form-group">
+        <label>${q.label}</label>
+        ${inputHtml}
+      </div>
+      <button class="btn" onclick="submitBasicQ()">回答を送信</button>
+    `;
+  }
+  // 単元計画入力
+  else if (step === QUESTIONS.length) {
+    const total = parseInt(appState.data.total_hours) || 1;
+    const curr = appState.hours_done + 1;
+
+    if (curr <= total) {
+      formDiv.innerHTML = `
+        <h3>⏰ 第 ${curr} 時 の入力</h3>
+        <div class="form-group" style="margin-top:8px;">
+          <label>第 ${curr} 時 の目標</label>
+          <textarea id="h_goal" class="form-control"></textarea>
+        </div>
+        <div class="form-group">
+          <label>身に付ける思考スキル（Ctrlキーで複数選択）</label>
+          <select id="h_skills" class="form-control skills-select" multiple>
+            ${THINKING_SKILLS.map(s => `<option value="${s}">${s}</option>`).join("")}
+          </select>
+        </div>
+        <button class="btn" onclick="submitHour(${curr}, ${total})">第 ${curr} 時を登録</button>
+      `;
+    }
+  }
+  // 本時選択
+  else if (step === QUESTIONS.length + 1) {
+    const total = parseInt(appState.data.total_hours) || 1;
+    let opts = "";
+    for (let i = 1; i <= total; i++) {
+      opts += `<option value="${i}">第 ${i} 時</option>`;
+    }
+    formDiv.innerHTML = `
+      <div class="form-group">
+        <label>本時は第何時ですか？</label>
+        <select id="honshi_num" class="form-control">${opts}</select>
+      </div>
+      <div class="form-group">
+        <label>本時のねらい</label>
+        <textarea id="honshi_aim" class="form-control">${appState.data.honshi_aim || ""}</textarea>
+      </div>
+      <button class="btn" onclick="submitHonshi()">本時設定を完了</button>
+    `;
+  }
+  // 指導課程（三松メソッド）
+  else if (step === QUESTIONS.length + 2) {
+    const mStep = appState.matsumatsu_step;
+    if (mStep < MATSUMATSU_PHASES.length) {
+      const phase = MATSUMATSU_PHASES[mStep];
+      const existing = (appState.data.matsumatsu && appState.data.matsumatsu[phase.key]) || {};
+
+      formDiv.innerHTML = `
+        <h3>📍 指導課程: ${phase.title}</h3>
+        <div class="form-group" style="margin-top:8px;">
+          <label>学習内容</label>
+          <textarea id="mm_content" class="form-control">${existing.content || ""}</textarea>
+        </div>
+        <div class="form-group">
+          <label>手立て</label>
+          <textarea id="mm_tedate" class="form-control">${existing.tedate || ""}</textarea>
+        </div>
+        <div class="form-group">
+          <label>身に付ける思考スキル（Ctrlキーで複数選択）</label>
+          <select id="mm_skills" class="form-control skills-select" multiple>
+            ${THINKING_SKILLS.map(s => {
+              const selected = (existing.skills || []).includes(s) ? "selected" : "";
+              return `<option value="${s}" ${selected}>${s}</option>`;
+            }).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>教員が意図する生徒の姿</label>
+          <textarea id="mm_target" class="form-control">${existing.target_student || ""}</textarea>
+        </div>
+        <button class="btn" onclick="submitMatsumatsu('${phase.key}', '${phase.title}')">${phase.title} を登録</button>
+      `;
+    } else {
+      formDiv.innerHTML = `<p style="color:green; font-weight:bold;">🎉 すべての入力が完了しました！</p>`;
+    }
+  }
+}
+
+function submitBasicQ() {
+  const q = QUESTIONS[appState.step];
+  const val = document.getElementById("input_val").value;
+  if (!val) return;
+
+  appState.data[q.key] = val;
+  appState.chat_history.push({ role: "user", content: String(val) });
+  appState.step++;
+
+  if (appState.step < QUESTIONS.length) {
+    appState.chat_history.push({ role: "assistant", content: QUESTIONS[appState.step].prompt });
+  } else {
+    const total = parseInt(appState.data.total_hours);
+    appState.chat_history.push({
+      role: "assistant",
+      content: `ありがとうございます！次に第1時～第${total}時までの【各時間の目標】と【身に付ける主となる思考スキル】を入力します。\nまず「第1時」の内容を入力してください。`
+    });
+  }
+  render();
+}
+
+function submitHour(curr, total) {
+  const goal = document.getElementById("h_goal").value;
+  const skillsSelect = document.getElementById("h_skills");
+  const skills = Array.from(skillsSelect.selectedOptions).map(o => o.value);
+  if (!goal) return;
+
+  appState.data.unit_plan.push({ hour: curr, goal: goal, skills: skills });
+  appState.hours_done++;
+
+  const skillsStr = skills.length ? skills.join(", ") : "なし";
+  appState.chat_history.push({ role: "user", content: `第${curr}時: ${goal} (思考スキル: ${skillsStr})` });
+
+  if (appState.hours_done < total) {
+    appState.chat_history.push({ role: "assistant", content: `次に「第${curr + 1}時」の目標と思考スキルを入力してください。` });
+  } else {
+    appState.step++;
+    appState.chat_history.push({ role: "assistant", content: `全${total}時間分の計画が入力されました！\n次に【本時】が第何時にあたるかの選択と、本時のねらいを入力してください。` });
+  }
+  render();
+}
+
+function submitHonshi() {
+  const num = parseInt(document.getElementById("honshi_num").value);
+  const aim = document.getElementById("honshi_aim").value;
+  if (!aim) return;
+
+  appState.data.honshi_num = num;
+  appState.data.honshi_aim = aim;
+
+  appState.chat_history.push({ role: "user", content: `本時: 第${num}時\nねらい: ${aim}` });
+  appState.step++;
+  appState.chat_history.push({ role: "assistant", content: "それでは最後に、指導課程（三松メソッド）を入力していきます。\nまずは【① つかむ】の学習内容、手立て、身に付ける思考スキル、教員が意図する生徒の姿を入力してください。" });
+  render();
+}
+
+function submitMatsumatsu(key, title) {
+  const content = document.getElementById("mm_content").value;
+  const tedate = document.getElementById("mm_tedate").value;
+  const skillsSelect = document.getElementById("mm_skills");
+  const skills = Array.from(skillsSelect.selectedOptions).map(o => o.value);
+  const target = document.getElementById("mm_target").value;
+
+  if (!appState.data.matsumatsu) appState.data.matsumatsu = {};
+  appState.data.matsumatsu[key] = { content, tedate, skills, target_student: target };
+
+  appState.matsumatsu_step++;
+  const skillsStr = skills.length ? skills.join(", ") : "なし";
+  appState.chat_history.push({ role: "user", content: `【${title}】\n学習内容: ${content}\n手立て: ${tedate}\n思考スキル: ${skillsStr}\n教員が意図する生徒の姿: ${target}` });
+
+  if (appState.matsumatsu_step < MATSUMATSU_PHASES.length) {
+    const nextP = MATSUMATSU_PHASES[appState.matsumatsu_step];
+    appState.chat_history.push({ role: "assistant", content: `次に【${nextP.title}】を入力してください。` });
+  } else {
+    appState.step++;
+    appState.chat_history.push({ role: "assistant", content: "🎉 すべての入力が完了しました！右側のシート画面をご確認ください。" });
+  }
+  render();
+}
+
+function goBackStep() {
+  const step = appState.step;
+  if (step === 0 && appState.hours_done === 0 && appState.matsumatsu_step === 0) return;
+
+  if (step === QUESTIONS.length + 2) {
+    if (appState.matsumatsu_step > 0) appState.matsumatsu_step--;
+    else appState.step--;
+  } else if (step === QUESTIONS.length + 1) {
+    appState.step--;
+    appState.hours_done = Math.max(0, appState.data.unit_plan.length - 1);
+    appState.data.unit_plan.pop();
+  } else if (step === QUESTIONS.length) {
+    if (appState.hours_done > 0) {
+      appState.hours_done--;
+      appState.data.unit_plan.pop();
+    } else {
+      appState.step--;
+    }
+  } else {
+    appState.step--;
+  }
+
+  if (appState.chat_history.length >= 2) {
+    appState.chat_history.pop();
+    appState.chat_history.pop();
+  }
+  render();
+}
+
+function renderPreview() {
+  const d = appState.data;
+  const mm = d.matsumatsu || {};
+
+  function getP(k) { return mm[k] || { content: "", tedate: "", skills: [], target_student: "" }; }
+  const tsukamu = getP("tsukamu");
+  const kangaeru = getP("kangaeru");
+  const manabi = getP("manabi");
+  const matomeru = getP("matomeru");
+
+  function fmtS(s) { return (s && s.length) ? s.join(" / ") : "( 未設定 )"; }
+
+  let unitRows = "";
+  if (!d.unit_plan || d.unit_plan.length === 0) {
+    unitRows = `<tr><td colspan="3" style="text-align:center; padding:8px; color:#888;">単元計画は未入力です</td></tr>`;
+  } else {
+    d.unit_plan.forEach(hp => {
+      const isHonshi = (hp.hour === d.honshi_num) ? `<br><span style="color:red; font-weight:bold;">★本時</span>` : "";
+      const bg = (hp.hour === d.honshi_num) ? `#fff3cd` : `#ffffff`;
+      const sStr = hp.skills ? hp.skills.join(", ") : "-";
+      unitRows += `
+        <tr style="background-color: ${bg};">
+          <td style="text-align:center;">第${hp.hour}時${isHonshi}</td>
+          <td>${safeHtml(hp.goal)}</td>
+          <td><span style="background:#004085; color:#fff; padding:1px 4px; border-radius:3px; font-size:7.5pt;">${safeHtml(sStr)}</span></td>
+        </tr>
+      `;
+    });
+  }
+
+  let mmOverviewHtml = "";
+  MATSUMATSU_PHASES.forEach(p => {
+    const pInfo = getP(p.key);
+    mmOverviewHtml += `
+      <div style="border: 1px solid #333; margin-bottom: 4px; padding: 3px; background-color: #fafafa;">
+        <div style="font-weight:bold; background-color: #d9edf7; padding: 1px 4px; border-bottom: 1px solid #333; margin: -3px -3px 3px -3px; font-size:8.5pt;">${p.title}</div>
+        <table style="width:100%; border:none; border-collapse:collapse; font-size:8pt;">
+          <tr style="border:none;">
+            <td style="border:none; width:50%; vertical-align:top; padding:1px 3px;">
+              <b>【学習内容】</b>: ${safeHtml(pInfo.content)}<br>
+              <b>【手立て】</b>: ${safeHtml(pInfo.tedate)}
+            </td>
+            <td style="border:none; width:50%; vertical-align:top; background-color:#ffffff; border-left:1px dashed #ccc; padding:1px 4px;">
+              <b>【思考スキル】</b>: <span style="color:#004085; font-weight:bold;">${safeHtml(pInfo.skills ? pInfo.skills.join(", ") : "なし")}</span><br>
+              <b>【教員が意図する生徒の姿】</b>: ${safeHtml(pInfo.target_student)}
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+  });
+
+  const previewBody = document.getElementById("preview-body");
+  previewBody.innerHTML = `
+    <!-- 1ページ目 -->
+    <div class="page">
+      <div class="page-title">
+        目指す生徒の姿を組み込んだ授業計画シート 【研究主題】 すべての生徒がいきいきと輝く授業を具現化するための集団づくりと授業改善
+      </div>
+      <table class="tbl">
+        <tr>
+          <th style="width:15%;">教科</th>
+          <td style="width:35%;">${safeHtml(d.subject)}</td>
+          <th style="width:15%;">授業者</th>
+          <td style="width:35%;">${safeHtml(d.teacher)}</td>
+        </tr>
+        <tr><th>単元（題材）名</th><td colspan="3">${safeHtml(d.unit_title)}</td></tr>
+        <tr><th>単元（題材）の目標</th><td colspan="3">${safeHtml(d.unit_goal)}</td></tr>
+        <tr><th>生徒の実態</th><td colspan="3">${safeHtml(d.student_status)}</td></tr>
+        <tr><th>指導上の工夫</th><td colspan="3">${safeHtml(d.teaching_ideas)}</td></tr>
+        <tr><th>教科の見方・考え方</th><td colspan="3">${safeHtml(d.viewpoint)}</td></tr>
+      </table>
+
+      <div style="font-weight:bold; margin: 6px 0 3px 0; background:#eee; padding:2px 5px;">■ 単元計画</div>
+      <table class="tbl">
+        <tr>
+          <th style="width:12%;">時間</th>
+          <th style="width:53%;">各時間の目標</th>
+          <th style="width:35%;">身に付ける主となる思考スキル</th>
+        </tr>
+        ${unitRows}
+      </table>
+      <table class="tbl" style="margin-top:4px;">
+        <tr>
+          <th style="width:20%;">本時のねらい</th>
+          <td>${safeHtml(d.honshi_aim)}</td>
+        </tr>
+      </table>
+
+      <div style="font-weight:bold; margin: 6px 0 3px 0; background:#eee; padding:2px 5px;">■ 指導課程（概要）</div>
+      ${mmOverviewHtml}
+    </div>
+
+    <!-- 2ページ目 -->
+    <div class="page">
+      <div class="page-title">■ 指導課程（三松メソッド・構造図解）</div>
+      <div class="diagram-wrapper">
+        <div class="tsunagu-sidebar">
+          <div class="tsunagu-arrow-tip"></div>
+          <div class="tsunagu-text">つなぐ</div>
+        </div>
+        <div class="flow-container">
+          <!-- ① つかむ -->
+          <div class="phase-card">
+            <div class="phase-card-title">① つかむ</div>
+            <div class="phase-card-body">
+              <div class="phase-card-left">
+                <b>学習内容:</b> ${safeHtml(tsukamu.content)}<br>
+                <b>手立て:</b> ${safeHtml(tsukamu.tedate)}<br>
+                <div class="skill-badge">💡 思考スキル: ${safeHtml(fmtS(tsukamu.skills))}</div>
+              </div>
+              <div class="phase-card-right">
+                <b>教員が意図する生徒の姿:</b><br>${safeHtml(tsukamu.target_student)}
+              </div>
+            </div>
+          </div>
+          <div class="down-arrow-icon">▼</div>
+          <!-- ② 考える -->
+          <div class="phase-card">
+            <div class="phase-card-title">② 考える</div>
+            <div class="phase-card-body">
+              <div class="phase-card-left">
+                <b>学習内容:</b> ${safeHtml(kangaeru.content)}<br>
+                <b>手立て:</b> ${safeHtml(kangaeru.tedate)}<br>
+                <div class="skill-badge">💡 思考スキル: ${safeHtml(fmtS(kangaeru.skills))}</div>
+              </div>
+              <div class="phase-card-right">
+                <b>教員が意図する生徒の姿:</b><br>${safeHtml(kangaeru.target_student)}
+              </div>
+            </div>
+          </div>
+          <div class="down-arrow-icon">▼</div>
+          <!-- ③ 学び合う -->
+          <div class="phase-card">
+            <div class="phase-card-title">③ 学び合う</div>
+            <div class="phase-card-body">
+              <div class="phase-card-left">
+                <b>学習内容:</b> ${safeHtml(manabi.content)}<br>
+                <b>手立て:</b> ${safeHtml(manabi.tedate)}<br>
+                <div class="skill-badge">💡 思考スキル: {safeHtml(fmtS(manabi.skills))}</div>
+              </div>
+              <div class="phase-card-right">
+                <b>教員が意図する生徒の姿:</b><br>${safeHtml(manabi.target_student)}
+              </div>
+            </div>
+          </div>
+          <div class="down-arrow-icon">▼</div>
+          <!-- ④ まとめる・振り返る -->
+          <div class="phase-card">
+            <div class="phase-card-title">④ まとめる・振り返る</div>
+            <div class="phase-card-body">
+              <div class="phase-card-left">
+                <b>学習内容:</b> ${safeHtml(matomeru.content)}<br>
+                <b>手立て:</b> ${safeHtml(matomeru.tedate)}<br>
+                <div class="skill-badge">💡 思考スキル: ${safeHtml(fmtS(matomeru.skills))}</div>
+              </div>
+              <div class="phase-card-right">
+                <b>教員が意図する生徒の姿:</b><br>${safeHtml(matomeru.target_student)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size: 7.5pt; margin-top: 8px; color: #555;">
+        ※ 各教科の見方・考え方は学習指導要領の解説 教科の目標を参考にする
+      </div>
+    </div>
+  `;
+}
+
+function saveJSON() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", "lesson_plan_progress.json");
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+function loadJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const loaded = JSON.parse(e.target.result);
+      appState = loaded;
+      render();
+      alert("作業データを正常に読み込みました！続きから再開できます。");
+    } catch(err) {
+      alert("JSONファイルの読み込みに失敗しました。正しいファイルかご確認ください。");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetApp() {
+  if (confirm("入力した内容を消去して、最初からやり直しますか？")) {
+    appState = {
+      step: 0,
+      data: { unit_plan: [], matsumatsu: {} },
+      chat_history: [{ role: "assistant", content: "こんにちは！授業計画シート作成ボットです。質問に順番に答えていくと、三松メソッドに沿った授業計画シートが完成します。\n\nまずは【教科名】を入力してください。" }],
+      hours_done: 0,
+      matsumatsu_step: 0
+    };
+    render();
+  }
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
